@@ -32,6 +32,7 @@ make cpu       # same directives, CPU threads -- the correctness reference
 | `01_dispersion.f90` | A kernel that's actually WW3-shaped: Newton-solve the dispersion relation at every (point, frequency). Embarrassingly parallel, tiny per-thread state, arithmetic-heavy. **This is what a good GPU kernel looks like** — contrast with `W3SRCEMD`. |
 | `02_do_concurrent.f90` | The same thing in standard ISO Fortran with no directives. One source, three targets (`-stdpar=gpu`, `-stdpar=multicore`, plain gfortran). |
 | `03_precision.f90` | Measures FP64 vs FP32 on your card. Expect roughly 60× on a 4090 (nominal 1:64). On an A100 it's about 2×. That gap is the whole argument for data-centre cards. |
+| `../bench/` | **Where the actual CPU-vs-GPU measurements live**, including a WW3-shaped kernel and a concurrent CPU+GPU split sweep. Come here to learn the tools, go there to get numbers. |
 | `build_netcdf_nvfortran.sh` | Rebuild HDF5 + NetCDF with nvfortran so WW3 can be built with it. Necessary because Fortran `.mod` files are compiler-specific. |
 
 ## The three flags that matter

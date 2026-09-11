@@ -31,6 +31,9 @@ program dispersion
   real, allocatable :: depth(:), sigma(:), k(:,:)
   real :: kd, f, fp, x, t
   integer :: ip, ik, it
+  ! NOTE: cpu_time is host CPU time. For real timing comparisons use
+  ! SYSTEM_CLOCK -- see ../bench/kernel_bench.f90. cpu_time SUMS across
+  ! OpenMP threads and will make a threaded run look slower than serial.
   real :: t0, t1
 
   allocate(depth(npt), sigma(nk), k(npt, nk))

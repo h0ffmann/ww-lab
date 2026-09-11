@@ -138,7 +138,28 @@ cmake .. -DSWITCH=/path/to/switch_lab_shrd
 ⚠ Expect to fight it. WW3 is routinely built with gfortran and Intel; `nvfortran` is less
 travelled and you may hit Fortran-standards pedantry the other compilers wave through.
 
-### 3. Profile before you port anything
+### 3. Measure your own hardware first
+
+Do not take my table of expectations, or anyone else's blog post, on faith.
+[`bench/`](../bench/) has three benchmarks:
+
+```bash
+cd bench
+make run                                     # WW3-shaped kernel: CPU vs GPU
+python3 make_bench_case.py --size medium     # then the real model:
+bash bench_ww3_cpu.sh $WW3/build case_medium #   MPI scaling on your i9
+```
+
+`kernel_bench` runs the same kernel twice — once with the spectrum resident on the device,
+once copying it in and out each step. The gap between those two numbers *is* the reason
+the published WW3 port only reached 1.3×, reproduced on your own PCIe bus in about a
+minute.
+
+`hetero_split` answers "can I use the CPU and GPU together?" by sweeping the work split
+and reporting your optimum. See [`bench/README.md`](../bench/README.md) for the arithmetic
+of why the answer is usually "yes, but it gains you almost nothing".
+
+### 4. Profile before you port anything
 
 ```bash
 nsys profile -o ww3_prof ./ww3_shel          # timeline
@@ -149,7 +170,7 @@ around `W3SRCE`. Confirm on *your* configuration that source terms dominate. If 
 is propagation-heavy (large domain, weak forcing) the hot spot may be somewhere else, and
 the published profile won't apply.
 
-### 4. If you still want to port — the realistic plan
+### 5. If you still want to port — the realistic plan
 
 Start with the smallest thing that can possibly work:
 
@@ -166,7 +187,7 @@ Start with the smallest thing that can possibly work:
 
 Budget: weeks, not an evening. And the published outcome on better hardware was 1.3×.
 
-### 5. Point the 4090 at something it's actually good at
+### 6. Point the 4090 at something it's actually good at
 
 Your card is genuinely excellent hardware. Better uses, roughly in order of how much fun
 they are:

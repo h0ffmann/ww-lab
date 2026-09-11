@@ -31,6 +31,16 @@ runs/
 work_lab/
 examples/upstream-*/
 
+# bench artefacts
+bench/kernel_cpu
+bench/kernel_mc
+bench/kernel_gpu
+bench/hetero_split
+bench/case_*/
+bench/run_np*/
+bench/results_*.csv
+RESULTS.md
+
 # builds
 build/
 swan/

@@ -19,7 +19,7 @@ jobs:
 
       - name: Python syntax
         run: |
-          python -m compileall -q examples exercises
+          python -m compileall -q examples exercises bench
 
       - name: Shell syntax
         run: |
@@ -41,10 +41,21 @@ jobs:
           # OpenACC directives are comments to gfortran, so these must still
           # be valid standard Fortran. 02_do_concurrent uses F2018 LOCAL(),
           # which older gfortran may reject -- allowed to fail.
-          for f in gpu/00_hello_acc.f90 gpu/01_dispersion.f90 gpu/03_precision.f90; do
+          for f in gpu/00_hello_acc.f90 gpu/01_dispersion.f90 gpu/03_precision.f90 \
+                   bench/kernel_bench.f90; do
             echo "-- $f"
-            gfortran -O1 -c "$f" -o /dev/null
+            gfortran -O1 -fopenmp -c "$f" -o /dev/null
           done
+          # hetero_split needs OpenACC async semantics that gfortran ignores;
+          # it must still be valid standard Fortran with OpenMP.
+          gfortran -O1 -fopenmp -c bench/hetero_split.f90 -o /dev/null || \
+            echo "note: hetero_split needs nvfortran -acc -mp"
+
+      - name: Benchmark case generator runs
+        run: |
+          cd bench && python3 make_bench_case.py --size small -o /tmp/bc >/dev/null
+          test -f /tmp/bc/ww3_grid.nml && test -f /tmp/bc/case.json
+          echo "case generator ok"
           gfortran -O1 -std=f2018 -c gpu/02_do_concurrent.f90 -o /dev/null || \
             echo "note: 02_do_concurrent needs a compiler with F2018 LOCAL() support"
 

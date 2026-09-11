@@ -19,6 +19,7 @@ with `⚠`.
 | `examples/` | Self-contained runnable cases with real `.nml` input files |
 | `exercises/` | `pyww3` exercises (with solutions) — drive WW3 from Python |
 | `gpu/` | nvfortran / OpenACC / CUDA Fortran sandbox aimed at your RTX 4090 |
+| `bench/` | i9 vs 4090: a WW3-shaped kernel, a concurrent CPU+GPU split sweep, and real WW3 MPI scaling |
 | `scripts/` | Get, build, and run WW3 (and SWAN); stage upstream regression tests |
 | `switches/` | Annotated switch files (WW3's compile-time feature selection) |
 | `env/` | conda environment + Dockerfile |
@@ -82,8 +83,9 @@ into `NOAA-EMC/WW3`. On a PCIe consumer card with no NVLink it will not be bette
 architected for GPUs from the ground up, which gives any heroic OpenACC work on WW3 a very
 short shelf life.
 
-So: compile WW3 with `nvfortran` on the **CPU** (that part works and is useful), and use
-`gpu/` to learn GPU Fortran on kernels that actually suit a 4090. Full reasoning and a
+So: compile WW3 with `nvfortran` on the **CPU** (that part works and is useful), use
+`gpu/` to learn GPU Fortran on kernels that actually suit a 4090, and use `bench/` to
+measure your own hardware rather than trusting anyone's table — including mine. Full reasoning and a
 realistic experiment plan in [`course/09-gpu-and-performance.md`](course/09-gpu-and-performance.md).
 
 ## Conventions used in this repo

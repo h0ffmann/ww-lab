@@ -4,7 +4,7 @@ WW3    ?= $(HOME)/src/WW3
 SWAN   ?= $(HOME)/src/swan
 SWITCH ?= $(CURDIR)/switches/switch_lab_shrd
 
-.PHONY: help prereqs get build regtest example01 gpu swan clean-runs
+.PHONY: help prereqs get build regtest example01 gpu swan bench clean-runs
 
 help:
 	@echo "ww3-lab"
@@ -17,6 +17,7 @@ help:
 	@echo "  make example01          run the fetch-limited growth case"
 	@echo "  make gpu                build the GPU sandbox (needs nvfortran)"
 	@echo "  make swan               clone and build SWAN (TU Delft GitLab)"
+	@echo "  make bench              i9 vs 4090 benchmarks (kernel + real WW3 scaling)"
 	@echo "  make clean-runs         delete run artefacts, keep configs"
 	@echo
 	@echo "  WW3    = $(WW3)"
@@ -44,7 +45,11 @@ gpu:
 swan:
 	bash scripts/04_get_swan.sh $(SWAN)
 
+bench:
+	bash bench/run_all.sh $(WW3)/build
+
 clean-runs:
+	$(MAKE) -C bench clean
 	rm -rf exercises/runs gpu/00_hello_acc gpu/01_dispersion gpu/02_do_concurrent gpu/03_precision
 	find examples -name '*.nc' -delete
 	find examples -name '*.ww3' -delete
