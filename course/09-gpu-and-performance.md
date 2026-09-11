@@ -56,6 +56,19 @@ baseline expectation:
   per-point source-term integration — fights that.
 - **This work is not merged upstream.** ⚠ Check whether that's changed since early 2023.
 
+### And WW3 is not where the GPU work is going
+
+NOAA has decided the answer is architectural, not incremental. **WAVEWATCH IV** is a
+ground-up rewrite whose stated drivers include, verbatim, that the rise of GPUs and other
+advanced architectures requires focusing on memory use and access rather than only on
+floating-point operations. WW4 Phase IV explicitly targets efficiency on CPUs *and* GPUs,
+in a code designed for it from the start — new data structures local to each domain,
+conventional domain decomposition instead of WW3's 2002-era "shuffle", and C++/Kokkos or
+Rust instead of Fortran.
+
+Which means any heroic OpenACC work you do on WW3 has a short shelf life. See
+[`10-ww4-and-the-future.md`](10-ww4-and-the-future.md).
+
 ### Your hardware makes it worse, not better
 
 The paper's bottleneck was PCIe/NVLink transfer on Summit nodes, which have **NVLink**
@@ -212,6 +225,7 @@ responding to it.
 | `nvfortran` CPU build | comparable to gfortran, maybe a little better |
 | Offloading `W3SRCEMD` to the 4090 | ⚠ optimistically ~1.3× vs a many-core CPU, per the published result on better-connected hardware. Weeks of work. Quite possibly slower. |
 | Custom GPU kernels in `gpu/` | 10–50× on the right kernel. Educational, not WW3. |
+| Waiting for WW4 | Architected for GPUs. First public release hoped summer 2027. |
 
 ## Sources for everything above
 
@@ -220,5 +234,7 @@ responding to it.
 - OpenACC Getting Started Guide — https://docs.nvidia.com/hpc-sdk/compilers/openacc-gs/
 - `do concurrent` offload — https://developer.nvidia.com/blog/accelerating-fortran-do-concurrent-with-gpus-and-the-nvidia-hpc-sdk/
 - cc89 = RTX 4090 confirmed in https://github.com/FahrenheitResearch/wrf-gpu-port (third-party)
+- NCEP Office Note 525, Tolman (2025) — https://doi.org/10.25923/h7j3-1h25
 
-→ Back to [`../README.md`](../README.md), or start playing in [`../gpu/`](../gpu/).
+→ [`10-ww4-and-the-future.md`](10-ww4-and-the-future.md), or start playing in
+[`../gpu/`](../gpu/).

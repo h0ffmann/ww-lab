@@ -11,6 +11,8 @@ the URL and current status may have drifted. Check before relying on them.
 ## Contents
 
 - [The model itself](#the-model-itself)
+- [WAVEWATCH IV — the successor](#wavewatch-iv--the-successor)
+- [SWAN — the other one](#swan--the-other-one)
 - [Documentation](#documentation)
 - [Courses and tutorials](#courses-and-tutorials)
 - [Grid and bathymetry tools](#grid-and-bathymetry-tools)
@@ -46,6 +48,123 @@ the URL and current status may have drifted. Check before relying on them.
 - **[polar.ncep.noaa.gov/waves](https://polar.ncep.noaa.gov/waves/wavewatch/)** `(v)` — the
   legacy NOAA project page. Still hosts version documentation, errata, and the auxiliary
   packages (gridgen, genes_gmd). Partly out of date, still the only home for some things.
+
+## WAVEWATCH IV — the successor
+
+**WW4 is real, it is a ground-up rewrite rather than a new WW3 version, and as of
+late 2026 it is pre-alpha.** Full treatment in
+[`course/10-ww4-and-the-future.md`](course/10-ww4-and-the-future.md).
+
+- **[NOAA-EMC/WW4](https://github.com/NOAA-EMC/WW4)** `(v)` — "Home of the WAVEWATCH IV ™
+  (WW4 ™) third-generation wind wave modeling framework."
+  Snapshot taken **2026-09-11**: default branch `develop`, **36 commits, no releases or
+  tags**, 3 stars, 7 forks, 34 open issues, 1 open PR. Top level is
+  `src/ tests/ tools/ templates/ externals/` plus `CMakeLists.txt`, `Doxyfile`,
+  `ARCHITECTURE.md`, `AGENTS.md`, and the IP set
+  (`INTENT.md`, `LICENSE.md`, `TRADEMARK.md`, `CONTRIBUTORS.md`).
+  ⚠ Those numbers were true on one day — re-check before quoting them.
+- **[NCEP Office Note 525](https://doi.org/10.25923/h7j3-1h25)** `(v)` — Tolman, *The
+  WAVEWATCH III® Software Modernization Project: Phase I report*, November 2025.
+  **The single most useful document in this entire list right now.** Unusually candid: it
+  publishes the disagreements inside the discussion group rather than smoothing them over.
+  The essentials:
+  - Decision is a **complete bottom-up rewrite in a new repository**, explicitly following
+    the MOM6-vs-MOM4 precedent. No backward compatibility with WW3.
+  - **Drivers**: the "shuffle" parallel decomposition dates to 2002 and won't reach
+    exascale; data structures date to the Fortran 90 transition; fractional stepping
+    (Yanenko 1971) fights the implicit schemes that unstructured grids need; optimisation
+    now means memory access rather than FLOPs *because of GPUs*; UFS wants coupling at the
+    level of functional units; the Fortran compiler pool is shrinking; and recompiling
+    between regression tests has become unsustainable.
+  - **Languages**: C++ (likely with Kokkos) as the initial core; **Rust** named by NOAA/NWS
+    as "the modern language of choice for WW4" and developed in parallel; Fortran demoted
+    to a *solver-only* language and a fast route to an IOC; Python for scripting, workflow,
+    data and product generation but explicitly **not** core or solver; **Julia considered
+    and declined** as a core language (small community, workforce risk), still allowed for
+    non-operational solvers. The report states plainly there is no community consensus.
+  - **Chosen path**: the "dual approach" — C++ core to operations-ready in ~2 years, Rust
+    built alongside, ~5 years for a Rust core.
+  - **Format changes coming**: consensus to drop big-endian unformatted binary for NetCDF,
+    with interest in Zarr; the compile-time switch file is under review; the
+    separate-executables workflow (`ww3_grid` / `ww3_prep` / `ww3_shel` / `ww3_ounf`) is
+    explicitly listed as a design decision to revisit.
+  - **Must survive**: full numerical convergence via the limiter formulation
+    (Tolman 2002b), without which you can't separate numerical from physical error.
+  - **Timeline**: Phase II began 1 Oct 2025; Phase IV with active community engagement
+    expected summer/autumn 2026; **first public release hoped for summer 2027** on the C++
+    path. ⚠ We are past the Phase IV date — check the repo.
+  - **WW3 will be sunset.** The report commits to "formally sunsetting most support for
+    WW3 once WW4 is mature, with a clearly communicated transition period." Code with no
+    owner willing to port it stays in WW3 and is obsolete for WW4.
+- **[WW4 wiki](https://github.com/NOAA-EMC/WW4/wiki)** `(v)` — the WW4 portal. The repo
+  README deliberately keeps documentation *out* of the repo root and points here.
+- **`AGENTS.md` in the WW4 repo** `(v)` — worth reading on its own account. WW4 documents
+  "an agentic AI approach used to create, translate or refactor code using AI agents such
+  as Copilot or Jules, the latter of which has been used extensively in developing the WW4
+  code from WW3", with the agent also enforcing coding standards, doxygen documentation and
+  unit tests. This is a large, visible, government-operational experiment in AI-assisted
+  translation of scientific Fortran.
+- Related reading, all cited in Office Note 525 `(v)`:
+  - Tolman (2025a), *What makes a successful community model for research and operations?
+    Lessons learned from WAVEWATCH III®*, BAMS, doi:10.1175/BAMS-D-24-0223.1
+  - Tolman (2025b), *Software modernization for the UFS: A position paper*,
+    doi:10.25923/gfbx-pk53
+  - Tolman & Meixner (2025), *Integrated Wind Wave Modeling at NWS*, NCEP Office Note 524,
+    doi:10.25923/jzks-6g74
+  - Shipman & Randles (2023), *An evaluation of risks associated with relying on Fortran
+    for mission critical codes for the next 15 years*, LA-UR-23-23992, doi:10.2172/1970284
+    — the Fortran-risk paper the whole discussion leans on.
+
+**What to do about it:** learn WW3. The physics is identical and the concepts transfer
+completely — action balance, source-term packages, spectral discretisation, CFL limits,
+grids, nesting, partitioning. The *interfaces* won't transfer, and that's fine; they're
+the cheap part. And if you were planning to GPU-port WW3 yourself, don't — WW4 Phase IV
+targets CPU and GPU efficiency in a code architected for it from the start.
+
+## SWAN — the other one
+
+Full treatment in [`course/11-swan.md`](course/11-swan.md); build script at
+`scripts/04_get_swan.sh`.
+
+SWAN (Simulating WAves Nearshore), TU Delft. Same governing equation as WW3, deliberately
+different numerics: **implicit, unconditionally stable, no CFL limit**, plus a stationary
+mode. That is why coastal work runs WW3 offshore and SWAN nearshore. Current version
+**Cycle III 41.51** `(v)`. Free.
+
+| | |
+|---|---|
+| **Git (use this)** | **https://gitlab.tudelft.nl/citg/wavemodels/swan** `(v)` |
+| Official site + downloads | https://swanmodel.sourceforge.io/download/download.htm `(v)` |
+| SourceForge releases | https://sourceforge.net/projects/swanmodel/files/swan/ `(v)` |
+| Release notes | https://swanmodel.sourceforge.io/modifications/modifications.htm `(v)` |
+| Implementation manual (build guide) | https://swanmodel.sourceforge.io/download/zip/swanimp.pdf `(v)` |
+| TU Delft group page | https://www.tudelft.nl/en/ceg/about-faculty/departments/hydraulic-engineering/sections/environmental-fluid-mechanics/research/swan `(v)` |
+
+The git repository is recent enough that most tutorials still send you to a tarball. Ignore
+the GitHub mirrors; they're stale snapshots.
+
+- Builds with **CMake 3.12+**, and the implementation manual recommends **Ninja** over GNU
+  make `(v)`. The older `make config && make ser|omp|mpi` route still works.
+- Compile-time options are **specially-formatted comments inside the `.ftn` sources**
+  rather than a separate switch file — `!/impi` for MPI in `swmod1.ftn`, `!ADC` for the
+  ADCIRC coupling hooks `(v)`. Same rebuild-from-clean discipline as WW3.
+- Parallelism: OpenMP and MPI, with **block-Jacobi** or **block-wavefront** strategies for
+  the implicit sweeps. The manual's guidance: block Jacobi for non- or quasi-stationary
+  runs `(v)`. Block wavefront preserves the sequential operation order and therefore the
+  convergence properties, at some cost in parallel efficiency.
+- **[SWASH](https://gitlab.tudelft.nl/citg/wavemodels/swash)** `(v)` — the same group's
+  non-hydrostatic, phase-resolving model. Site: https://swash.sourceforge.io/ `(v)`
+- **[rompy-swan](https://rom-py.github.io/rompy-swan/)** `(v)` — pydantic-validated,
+  type-safe SWAN configuration from Python or YAML, with NetCDF/THREDDS data interfaces.
+  Noticeably more mature than any equivalent for WW3.
+- **[wavespectra](https://github.com/wavespectra/wavespectra)** `(v)` reads SWAN spectra
+  natively (`read_swan`), so post-processing is shared across both models.
+- **swantools** (PyPI) `(v)` — older and lighter; reads TABLE, SPECOUT and BLOCK output
+  into pandas.
+- **omuse-swan** (PyPI) `(v)` — SWAN packaged for the Oceanographic Multi-purpose Software
+  Environment.
+- **Delft3D-WAVE** wraps SWAN and couples it to Delft3D-FLOW. **ADCIRC+SWAN** is the US
+  storm-surge standard. **COAWST** ships both SWAN and WW3.
 
 ## Documentation
 
@@ -246,7 +365,7 @@ You asked for a list. Wave modelling splits into families that do genuinely diff
 
 | Model | Origin | Notes |
 |---|---|---|
-| **SWAN** | TU Delft | The other one everybody uses. Nearshore-focused, implicit/unconditionally-stable schemes, great for coastal domains where WW3's explicit propagation forces tiny timesteps. Free, GPL. Often nested inside WW3. |
+| **SWAN** | TU Delft | The other one everybody uses. Implicit, unconditionally stable, no CFL limit, plus a stationary mode — so it eats the high-resolution coastal domains that WW3's explicit propagation makes ruinous. Free. **See the dedicated section above** and `course/11-swan.md`. |
 | **WAM (Cycle 4.x)** | ECMWF / WAMDI | The original third-gen model. WW3 and ECWAM both descend from it. |
 | **ECWAM** | ECMWF | WAM's operational descendant; produces the wave fields in ERA5 and IFS. Now open source as part of the ECMWF open IFS ecosystem. ⚠ check current licensing. |
 | **WWM-III** | Roland et al. | Wind Wave Model III, designed to be coupled tightly to **SCHISM** on unstructured grids. Strong choice for estuary/shelf work. |
@@ -259,7 +378,7 @@ You asked for a list. Wave modelling splits into families that do genuinely diff
 
 | Model | Type | Notes |
 |---|---|---|
-| **SWASH** | Non-hydrostatic NSE | From the SWAN group. Wave-by-wave in the surf zone: breaking, runup, infragravity waves. |
+| **SWASH** | Non-hydrostatic NSE | From the SWAN group. Wave-by-wave in the surf zone: breaking, runup, infragravity waves. Git: https://gitlab.tudelft.nl/citg/wavemodels/swash `(v)` |
 | **XBeach** | Coupled short-wave + flow + morphology | The standard for storm-impact and dune-erosion modelling. Has surfbeat and non-hydrostatic modes. |
 | **FUNWAVE-TVD** | Boussinesq | Nearshore wave transformation, nearshore circulation, tsunami runup. Well documented. |
 | **Celeris** | Boussinesq on GPU | Interactive, real-time, renders while it solves. **If you want to see a GPU run waves tonight, this is the one.** Built for exactly the hardware you have. |

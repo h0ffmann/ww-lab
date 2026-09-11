@@ -15,11 +15,11 @@ with `⚠`.
 | Path | What it is |
 |---|---|
 | `AWESOME-WW3.md` | Curated, annotated link list: source, docs, courses, tooling, papers, data, other models |
-| `course/` | 10 lessons, in order, from "what is a wave spectrum" to "should I buy a GPU" |
+| `course/` | 12 lessons, in order, from "what is a wave spectrum" through GPUs, WAVEWATCH IV, and SWAN |
 | `examples/` | Self-contained runnable cases with real `.nml` input files |
 | `exercises/` | `pyww3` exercises (with solutions) — drive WW3 from Python |
 | `gpu/` | nvfortran / OpenACC / CUDA Fortran sandbox aimed at your RTX 4090 |
-| `scripts/` | Get, build, and run WW3; stage upstream regression tests |
+| `scripts/` | Get, build, and run WW3 (and SWAN); stage upstream regression tests |
 | `switches/` | Annotated switch files (WW3's compile-time feature selection) |
 | `env/` | conda environment + Dockerfile |
 
@@ -44,6 +44,29 @@ cd examples/01-fetch-limited-growth && ./run.sh
 
 Then start at [`course/00-orientation.md`](course/00-orientation.md).
 
+Optionally, get SWAN too — it's the right tool for the coastal cases WW3 is wrong for:
+
+```bash
+bash scripts/04_get_swan.sh ~/src/swan
+```
+
+## Two things worth knowing before you invest
+
+**WAVEWATCH IV exists, and WW3 is scheduled for sunset.** [NOAA-EMC/WW4](https://github.com/NOAA-EMC/WW4)
+is a ground-up rewrite — new repository, no backward compatibility, C++ core with Rust
+alongside, Fortran demoted to a solver-only language. As of 2026-09-11 it had 36 commits
+and no releases: pre-alpha. First public release is hoped for summer 2027. The plan,
+including the commitment to sunset WW3 support once WW4 matures, is in
+[NCEP Office Note 525](https://doi.org/10.25923/h7j3-1h25). Learn WW3 anyway — the physics
+is identical and the concepts transfer completely; only the interfaces won't. Details in
+[`course/10-ww4-and-the-future.md`](course/10-ww4-and-the-future.md).
+
+**SWAN is not a competitor, it's the other half of the toolkit.** Implicit,
+unconditionally stable, no CFL limit, stationary mode. WW3 offshore, SWAN nearshore is the
+standard coastal architecture. Source is now on
+[TU Delft GitLab](https://gitlab.tudelft.nl/citg/wavemodels/swan), which most tutorials
+haven't caught up with. See [`course/11-swan.md`](course/11-swan.md).
+
 ## The short answer on your RTX 4090
 
 **Yes, NVIDIA ships a Fortran compiler.** It's `nvfortran`, part of the free
@@ -51,11 +74,13 @@ Then start at [`course/00-orientation.md`](course/00-orientation.md).
 OpenMP target offload, and `do concurrent` offload (`-stdpar=gpu`). Your 4090 is Ada,
 compute capability 8.9, so `-gpu=cc89`.
 
-**But WW3 itself has no GPU support upstream.** The only published port
+**But WW3 itself has no GPU support upstream**, and it never will — The only published port
 ([Ikuyajolu et al., GMD 2023](https://gmd.copernicus.org/articles/16/1445/2023/))
 OpenACC-ified one module (`W3SRCEMD`, the source-term integration) and got roughly
 **1.3× against 42 CPU cores** on Summit's V100s — data-transfer bound, and not merged
-into `NOAA-EMC/WW3`. On a PCIe consumer card with no NVLink it will not be better.
+into `NOAA-EMC/WW3`. On a PCIe consumer card with no NVLink it will not be better. And WW4 is explicitly being
+architected for GPUs from the ground up, which gives any heroic OpenACC work on WW3 a very
+short shelf life.
 
 So: compile WW3 with `nvfortran` on the **CPU** (that part works and is useful), and use
 `gpu/` to learn GPU Fortran on kernels that actually suit a 4090. Full reasoning and a

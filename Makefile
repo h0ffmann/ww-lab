@@ -1,9 +1,10 @@
 # ww3-lab -- convenience targets. Everything real lives in scripts/.
 
 WW3    ?= $(HOME)/src/WW3
+SWAN   ?= $(HOME)/src/swan
 SWITCH ?= $(CURDIR)/switches/switch_lab_shrd
 
-.PHONY: help prereqs get build regtest example01 gpu clean-runs
+.PHONY: help prereqs get build regtest example01 gpu swan clean-runs
 
 help:
 	@echo "ww3-lab"
@@ -15,13 +16,12 @@ help:
 	@echo "  make regtest            run upstream ww3_tp2.2 step by step"
 	@echo "  make example01          run the fetch-limited growth case"
 	@echo "  make gpu                build the GPU sandbox (needs nvfortran)"
+	@echo "  make swan               clone and build SWAN (TU Delft GitLab)"
 	@echo "  make clean-runs         delete run artefacts, keep configs"
 	@echo
 	@echo "  WW3    = $(WW3)"
+	@echo "  SWAN   = $(SWAN)"
 	@echo "  SWITCH = $(SWITCH)"
-	@echo
-	@echo "Scripts are not marked executable in this archive; use 'bash <script>'"
-	@echo "or run 'chmod +x scripts/*.sh examples/*/run.sh' once."
 
 prereqs:
 	bash scripts/00_prereqs.sh
@@ -40,6 +40,9 @@ example01:
 
 gpu:
 	$(MAKE) -C gpu
+
+swan:
+	bash scripts/04_get_swan.sh $(SWAN)
 
 clean-runs:
 	rm -rf exercises/runs gpu/00_hello_acc gpu/01_dispersion gpu/02_do_concurrent gpu/03_precision
