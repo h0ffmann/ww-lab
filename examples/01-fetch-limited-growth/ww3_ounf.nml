@@ -1,0 +1,29 @@
+! -------------------------------------------------------------------- !
+! ww3-lab example 01 : gridded output -> netCDF
+! -------------------------------------------------------------------- !
+
+! TIMESPLIT controls how output is chunked across files:
+!   0 = one file, no date in the name;  4 = yearly;  6 = monthly;
+!   8 = daily;  10 = hourly.
+! 0 keeps this example to a single tidy file.
+!
+! TYPE: 2 = SHORT (packed), 3 = mixed, 4 = REAL. Use 4 while learning so
+! you never have to wonder whether a weird value is a packing artefact.
+&FIELD_NML
+  FIELD%TIMESTART  = '20200101 000000'
+  FIELD%TIMESTRIDE = '3600'
+  FIELD%TIMESTOP   = '20200103 000000'
+  FIELD%TIMECOUNT  = '1000'
+  FIELD%TIMESPLIT  = 0
+  FIELD%LIST       = 'HS T01 T0M1 FP DIR SPR WND DPT'
+  FIELD%PARTITION  = '0'
+  FIELD%SAMEFILE   = T
+  FIELD%TYPE       = 4
+/
+
+&FILE_NML
+  FILE%PREFIX = 'ww3.'
+  FILE%NETCDF = 4
+/
+
+! -------------------------------------------------------------------- !

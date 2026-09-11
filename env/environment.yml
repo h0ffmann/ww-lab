@@ -1,0 +1,24 @@
+name: ww3-lab
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  # core
+  - numpy
+  - xarray
+  - netcdf4
+  - dask
+  - scipy
+  - matplotlib
+  - cartopy
+  # wave-specific
+  - wavespectra
+  # data access
+  - cdsapi          # ERA5 from the Copernicus CDS
+  - cfgrib          # if you end up with GRIB2 forcing (GFS)
+  # convenience
+  - jupyterlab
+  - pandas
+  - pip
+  - pip:
+      - pyww3

@@ -1,0 +1,61 @@
+! -------------------------------------------------------------------- !
+! ww3-lab example 01 : model driver
+! -------------------------------------------------------------------- !
+
+! 48 hours is plenty for a 1200 km fetch to reach steady state at 10 m/s.
+! Dates are 'YYYYMMDD HHMMSS'. The actual calendar date is arbitrary here
+! because the forcing is homogeneous and constant.
+&DOMAIN_NML
+  DOMAIN%START = '20200101 000000'
+  DOMAIN%STOP  = '20200103 000000'
+/
+
+! 'H' = homogeneous field, supplied below rather than read from a file.
+! Other values: 'T' (read from wind.ww3, produced by ww3_prnc), 'C' (coupled).
+&INPUT_NML
+  INPUT%FORCING%WINDS = 'H'
+/
+
+! Gridded output fields.
+!   HS   significant wave height
+!   T01  mean period (first moment)
+!   T0M1 mean period (energy/inverse-frequency weighted)
+!   FP   peak frequency
+!   DIR  mean direction
+!   SPR  directional spread
+!   WND  the wind, echoed back -- always output this, it catches forcing bugs
+!   DPT  depth
+&OUTPUT_TYPE_NML
+  TYPE%FIELD%LIST = 'HS T01 T0M1 FP DIR SPR WND DPT'
+/
+
+! Each entry is: START  STRIDE_SECONDS  STOP
+! 3600 s = hourly fields for the whole run.
+&OUTPUT_DATE_NML
+  DATE%FIELD = '20200101 000000' '3600' '20200103 000000'
+/
+
+! Homogeneous forcing. For WND the three values are
+!   VALUE1 = wind speed (m/s)
+!   VALUE2 = wind direction (degrees)
+!   VALUE3 = air-sea temperature difference (deg C), used by stability corrections
+!
+! ⚠ DIRECTION CONVENTION. WW3's direction convention is a genuine
+! foot-gun and differs between input and some outputs. This file assumes
+! 270 deg produces a wind blowing towards +x (i.e. eastward, away from the
+! coast at i=1). If your Hs field grows towards SMALLER x instead of larger,
+! flip this to 90. and rerun. Confirming which it is on YOUR build is
+! exercise 1 in the lesson -- don't take my word for it.
+&HOMOG_COUNT_NML
+  HOMOG_COUNT%N_WND = 1
+/
+
+&HOMOG_INPUT_NML
+  HOMOG_INPUT(1)%NAME   = 'WND'
+  HOMOG_INPUT(1)%DATE   = '20200101 000000'
+  HOMOG_INPUT(1)%VALUE1 = 10.
+  HOMOG_INPUT(1)%VALUE2 = 270.
+  HOMOG_INPUT(1)%VALUE3 = 0.
+/
+
+! -------------------------------------------------------------------- !

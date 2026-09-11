@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: WAVEWATCH III support
+    url: https://github.com/NOAA-EMC/WW3/discussions
+    about: >-
+      Questions about WW3 itself -- build errors, physics, namelists -- belong
+      upstream, where the people who wrote it are. Open an issue here only for
+      problems with this repo's teaching material, scripts, or examples.

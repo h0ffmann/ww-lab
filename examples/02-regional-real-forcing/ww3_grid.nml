@@ -1,0 +1,103 @@
+! -------------------------------------------------------------------- !
+! ww3-lab example 02 : regional spherical grid, southern Brazil shelf
+!
+! Domain: 52W-44W, 32S-24S  (Santa Catarina / Rio Grande do Sul shelf and
+! the adjacent deep South Atlantic). 0.1 degree resolution.
+!
+! This is the first case with real geography, real bathymetry, and real
+! winds. Everything that was trivially safe in example 01 is now a
+! decision you have to make.
+! -------------------------------------------------------------------- !
+
+&SPECTRUM_NML
+  SPECTRUM%XFR   = 1.1
+  SPECTRUM%FREQ1 = 0.0373
+  SPECTRUM%NK    = 32
+  SPECTRUM%NTH   = 36
+/
+! FREQ1 lowered to 0.0373 Hz (T = 26.8 s) because South Atlantic swell
+! arriving here from the Southern Ocean is long. If your lowest frequency
+! bin is above the swell you care about, that energy is simply absent from
+! the model -- silently.
+! NTH raised to 36 (10 deg bins): swell needs directional resolution, and
+! a coarse direction grid produces the Garden Sprinkler Effect, where a
+! smooth swell field breaks into discrete beams. PR3/UQ mitigates it; more
+! directions mitigates it more.
+
+&RUN_NML
+  RUN%FLCX  = T
+  RUN%FLCY  = T
+  RUN%FLCTH = T
+  RUN%FLCK  = T
+  RUN%FLSOU = T
+/
+! FLCK is on now: variable bathymetry means shoaling is real.
+
+! CFL: dx at 30S for 0.1 deg of longitude is about 0.1 * 111320 * cos(30)
+!      = 9640 m. Meridionally it is 11132 m. Take the smaller.
+!      cg_max = g / (4*pi*FREQ1) = 9.806 / (4*pi*0.0373) = 20.92 m/s
+!      T_cfl  = 9640 / 20.92 = 461 s
+!      DTXY  ~ 0.9 * 461 = 415 -> round DOWN to 400
+!      DTMAX = 3 * 400 = 1200 ;  DTKTH = 600 ;  DTMIN = 10
+! Round DOWN, never up. These are limits, not targets.
+&TIMESTEPS_NML
+  TIMESTEPS%DTMAX = 1200.
+  TIMESTEPS%DTXY  = 400.
+  TIMESTEPS%DTKTH = 600.
+  TIMESTEPS%DTMIN = 10.
+/
+
+&GRID_NML
+  GRID%NAME  = 'SBRAZIL 0.1DEG'
+  GRID%NML   = 'namelists.nml'
+  GRID%TYPE  = 'RECT'
+  GRID%COORD = 'SPHE'
+  GRID%CLOS  = 'NONE'
+  GRID%ZLIM  = -0.10
+  GRID%DMIN  = 2.50
+/
+
+! 81 x 81 points covering 52W..44W, 32S..24S at 0.1 deg.
+! SX/SY are in degrees here because COORD='SPHE'.
+&RECT_NML
+  RECT%NX  = 81
+  RECT%NY  = 81
+  RECT%SX  = 0.1
+  RECT%SY  = 0.1
+  RECT%SF  = 1.
+  RECT%X0  = -52.0
+  RECT%Y0  = -32.0
+  RECT%SF0 = 1.
+/
+
+! Written by make_bathy.py from GEBCO. GEBCO elevation is already negative
+! below sea level, which is exactly WW3's convention, so SF = 1.
+&DEPTH_NML
+  DEPTH%SF       = 1.
+  DEPTH%FILENAME = 'bathy.inp'
+  DEPTH%IDLA     = 1
+/
+
+&MASK_NML
+  MASK%FILENAME = 'mask.inp'
+  MASK%IDLA     = 1
+/
+
+! Open boundaries along the south and east edges, where swell enters.
+! ⚠ Boundary points must be INSIDE the grid, never on the first or last
+! row/column -- the propagation stencil needs a cell outside them. This
+! is the single most common ww3_grid error for nested runs.
+! With N_POINT = 2 and CONNECT = T on the second point, WW3 fills in every
+! point on the straight line between them.
+&INBND_COUNT_NML
+  INBND_COUNT%N_POINT = 4
+/
+
+&INBND_POINT_NML
+  INBND_POINT(1) = 2  2  F     ! SW corner, one cell in
+  INBND_POINT(2) = 80 2  T     ! ...along the southern edge
+  INBND_POINT(3) = 80 80 T     ! ...up the eastern edge
+  INBND_POINT(4) = 2  2  F     ! (leave the north and west closed)
+/
+
+! -------------------------------------------------------------------- !

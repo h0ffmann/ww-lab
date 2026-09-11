@@ -1,0 +1,18 @@
+! Spectral point output -> netCDF. This is the file wavespectra reads.
+&POINT_NML
+  POINT%TIMESTART  = '20240701 000000'
+  POINT%TIMESTRIDE = '3600'
+  POINT%TIMESTOP   = '20240708 000000'
+  POINT%TIMESPLIT  = 0
+/
+
+&FILE_NML
+  FILE%PREFIX = 'ww3.'
+  FILE%NETCDF = 4
+/
+
+! SPECTRA%OUTPUT = 3 : full 2D frequency-direction spectrum.
+! (1 = 1D freq spectrum, 2 = mean parameters, 4 = source terms)
+&SPECTRA_NML
+  SPECTRA%OUTPUT = 3
+/

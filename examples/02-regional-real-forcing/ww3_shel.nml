@@ -1,0 +1,33 @@
+! -------------------------------------------------------------------- !
+! ww3-lab example 02 : regional run with real forcing
+! -------------------------------------------------------------------- !
+
+&DOMAIN_NML
+  DOMAIN%START = '20240701 000000'
+  DOMAIN%STOP  = '20240708 000000'
+/
+
+! 'T' = read from the binary file written by ww3_prnc (wind.ww3).
+! Boundary spectra come from nest.ww3 (written by ww3_bounc) and are
+! picked up automatically when that file exists -- there is no flag for it.
+&INPUT_NML
+  INPUT%FORCING%WINDS = 'T'
+/
+
+&OUTPUT_TYPE_NML
+  TYPE%FIELD%LIST  = 'HS T01 T0M1 FP DIR SPR WND DPT PHS PTP PDIR'
+  TYPE%POINT%FILE  = 'points.list'
+/
+! PHS/PTP/PDIR are the PARTITIONED fields: WW3 splits the 2D spectrum into
+! wind sea and up to N swell systems and reports each separately. On this
+! coast you will usually see a local wind sea plus one or two Southern
+! Ocean swell trains, and the partitioned output is the only way to see
+! them as distinct things rather than a single blended Hs.
+
+&OUTPUT_DATE_NML
+  DATE%FIELD   = '20240701 000000' '3600' '20240708 000000'
+  DATE%POINT   = '20240701 000000' '3600' '20240708 000000'
+  DATE%RESTART = '20240708 000000' '0'    '20240708 000000'
+/
+
+! -------------------------------------------------------------------- !

@@ -1,0 +1,63 @@
+# WW3 run artefacts
+mod_def.ww3
+mapsta.ww3
+mask.ww3
+restart*.ww3
+nest.ww3
+out_grd.ww3
+out_pnt.ww3
+log.ww3
+log.mww3
+test.ww3
+wind.ww3
+current.ww3
+level.ww3
+ice.ww3
+param.scratch
+*.out
+*.nc
+*.png
+
+# generated grid inputs
+depth.inp
+mask.inp
+bathy.inp
+
+# generated namelists (the templates are tracked, the copies are not)
+ww3_prnc.nml
+
+# run trees
+runs/
+work_lab/
+examples/upstream-*/
+
+# builds
+build/
+gpu/00_hello_acc
+gpu/01_dispersion
+gpu/01_dispersion_cpu
+gpu/02_do_concurrent
+gpu/03_precision
+*.mod
+*.o
+
+# data you have to fetch yourself
+gebco.nc
+era5_winds.nc
+
+# python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+
+# editors / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# misc
+*.log
+*.tar.gz

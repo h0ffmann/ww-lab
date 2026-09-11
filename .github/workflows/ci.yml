@@ -1,0 +1,59 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: syntax checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Python syntax
+        run: |
+          python -m compileall -q examples exercises
+
+      - name: Shell syntax
+        run: |
+          for f in $(git ls-files '*.sh'); do
+            echo "-- $f"
+            bash -n "$f"
+          done
+
+      - name: Shellcheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: warning
+        continue-on-error: true
+
+      - name: Fortran compiles (CPU, directives ignored)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gfortran
+          # OpenACC directives are comments to gfortran, so these must still
+          # be valid standard Fortran. 02_do_concurrent uses F2018 LOCAL(),
+          # which older gfortran may reject -- allowed to fail.
+          for f in gpu/00_hello_acc.f90 gpu/01_dispersion.f90 gpu/03_precision.f90; do
+            echo "-- $f"
+            gfortran -O1 -c "$f" -o /dev/null
+          done
+          gfortran -O1 -std=f2018 -c gpu/02_do_concurrent.f90 -o /dev/null || \
+            echo "note: 02_do_concurrent needs a compiler with F2018 LOCAL() support"
+
+  links:
+    name: markdown links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --max-concurrency 4 --accept 200,206,403,429 './**/*.md'
+          fail: false

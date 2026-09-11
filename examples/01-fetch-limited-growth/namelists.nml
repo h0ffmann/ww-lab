@@ -1,0 +1,19 @@
+! Physics / numerics tuning namelists read by ww3_grid via GRID%NML.
+!
+! Which blocks are *meaningful* here depends entirely on your switch file:
+! &SIN4/&SDS4 only exist if you built with ST4, &SIN6/&SDS6 only with ST6,
+! and so on. ww3_grid skips namelists that the switch settings don't need.
+!
+! FLAGTR = 0 : no subgrid obstruction map. We didn't supply an obstruction
+! file, so this must be 0 or ww3_grid will go looking for one.
+
+&MISC
+  FLAGTR = 0
+/
+
+! Uncomment to start tweaking ST4 (requires an ST4 build).
+! BETAMAX is the single most influential wind-input tuning constant in WW3 --
+! bump it and everything gets bigger. Default is around 1.52 in recent versions.
+!&SIN4
+!  BETAMAX = 1.52
+!/

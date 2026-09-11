@@ -1,0 +1,7 @@
+&MISC
+  FLAGTR = 0
+/
+! Once you have an obstruction grid from gridgen, set FLAGTR = 1 (obstruction
+! at cell boundaries) or 2 (at cell centres) and add an &OBST_NML block to
+! ww3_grid.nml. On a 0.1 deg grid the small islands off Santa Catarina are
+! unresolved, and obstruction grids are how WW3 accounts for them.

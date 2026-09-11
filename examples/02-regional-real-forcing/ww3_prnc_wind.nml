@@ -1,0 +1,36 @@
+! -------------------------------------------------------------------- !
+! ww3-lab example 02 : convert ERA5 netCDF winds -> wind.ww3
+!
+! Run as:   ww3_prnc          (it reads ww3_prnc.nml, so symlink/copy this)
+!
+! ww3_prnc interpolates a forcing field from its own netCDF grid onto the
+! model grid and writes WW3's internal binary format. One invocation per
+! forcing type; you rename the namelist between runs.
+! -------------------------------------------------------------------- !
+
+&FORCING_NML
+  FORCING%FIELD%WINDS     = T
+  FORCING%GRID%LATLON     = T
+  FORCING%TIMESTART       = '20240701 000000'
+  FORCING%TIMESTOP        = '20240708 000000'
+/
+
+&FILE_NML
+  FILE%FILENAME  = 'era5_winds.nc'
+  FILE%LONGITUDE = 'longitude'
+  FILE%LATITUDE  = 'latitude'
+  FILE%VAR(1)    = 'u10'
+  FILE%VAR(2)    = 'v10'
+/
+
+! ⚠ Verify variable and coordinate names against your actual download.
+! ERA5 from the CDS has used both 'longitude'/'latitude' and
+! 'valid_time' vs 'time' across format revisions. ncdump -h is your friend:
+!     ncdump -h era5_winds.nc | head -40
+!
+! ⚠ Also check the longitude convention. ERA5 is commonly served on
+! 0..360. Our grid is on -52..-44. If they disagree, ww3_prnc will either
+! error or -- worse -- silently give you a field of zeros. Convert with:
+!     ds = ds.assign_coords(longitude=(((ds.longitude + 180) % 360) - 180))
+!     ds = ds.sortby('longitude')
+! -------------------------------------------------------------------- !

@@ -1,0 +1,104 @@
+! -------------------------------------------------------------------- !
+! ww3-lab example 01 : fetch-limited growth in a rectangular channel
+!
+! A Cartesian box, flat 250 m bottom (deep water for all our frequencies),
+! land along the western edge, constant wind blowing east. Waves grow with
+! distance from the coast. This is the textbook fetch-limited problem, and
+! it has an analytic answer we can check against.
+!
+! Layout: 61 x 5 cells, dx = dy = 20 km  ->  1200 km of fetch.
+! -------------------------------------------------------------------- !
+
+! --- spectral discretisation -----------------------------------------
+! 32 frequencies from 0.04118 Hz, geometric with ratio 1.1
+!   -> f_max = 0.04118 * 1.1^31 = 0.7595 Hz  (T = 1.3 s)
+! 24 directions = 15 degree bins.
+! These are the WW3 defaults and are a sane starting point everywhere.
+&SPECTRUM_NML
+  SPECTRUM%XFR   = 1.1
+  SPECTRUM%FREQ1 = 0.04118
+  SPECTRUM%NK    = 32
+  SPECTRUM%NTH   = 24
+/
+
+! --- which terms of the balance equation are active -------------------
+! FLCX/FLCY : spatial propagation
+! FLCTH     : refraction (direction shift)
+! FLCK      : wavenumber shift (shoaling / current-induced). Off: flat bottom,
+!             no currents, so there is nothing for it to do.
+! FLSOU     : source terms (wind input, dissipation, nonlinear transfer)
+&RUN_NML
+  RUN%FLCX  = T
+  RUN%FLCY  = T
+  RUN%FLCTH = T
+  RUN%FLCK  = F
+  RUN%FLSOU = T
+/
+
+! --- time steps -------------------------------------------------------
+! The CFL limit for spatial propagation is set by the FASTEST group
+! velocity, which belongs to the LOWEST frequency:
+!     cg_max = g / (4*pi*FREQ1) = 9.806 / (4*pi*0.04118) = 18.95 m/s
+!     T_cfl  = dx / cg_max      = 20000 / 18.95          = 1055 s
+! Rule of thumb from the WW3 namelist template:
+!     DTXY  ~ 0.9 * T_cfl         -> 900
+!     DTMAX ~ 3 * DTXY            -> 2700
+!     DTKTH ~ DTMAX / 2           -> 1350   (no currents here, so /2 is fine)
+!     DTMIN ~ 10                  -> source-term integration floor
+! Keep them integer multiples of each other. They are not optional
+! tuning knobs; get them wrong and the model either blows up or crawls.
+&TIMESTEPS_NML
+  TIMESTEPS%DTMAX = 2700.
+  TIMESTEPS%DTXY  = 900.
+  TIMESTEPS%DTKTH = 1350.
+  TIMESTEPS%DTMIN = 10.
+/
+
+! --- the grid ---------------------------------------------------------
+! CART = Cartesian (metres), so we sidestep spherical geometry entirely.
+! CLOS = NONE: no periodic wrap.
+! ZLIM = -0.10 : anything shallower than this counts as permanently dry land.
+! DMIN =  2.50 : floor on water depth used in the physics, to stop blow-ups.
+&GRID_NML
+  GRID%NAME  = 'FETCH CHANNEL 20KM'
+  GRID%NML   = 'namelists.nml'
+  GRID%TYPE  = 'RECT'
+  GRID%COORD = 'CART'
+  GRID%CLOS  = 'NONE'
+  GRID%ZLIM  = -0.10
+  GRID%DMIN  = 2.50
+/
+
+! SX/SY are in metres because COORD='CART'. SF is a *division* factor.
+&RECT_NML
+  RECT%NX  = 61
+  RECT%NY  = 5
+  RECT%SX  = 20000.
+  RECT%SY  = 20000.
+  RECT%SF  = 1.
+  RECT%X0  = 0.
+  RECT%Y0  = 0.
+  RECT%SF0 = 1.
+/
+
+! --- bathymetry -------------------------------------------------------
+! Depths must be NEGATIVE below mean sea level. Our file is written as
+! positive metres, so SF = -1. flips the sign for us. (SF multiplies.)
+! IDLA=1 : read line by line, bottom row first.
+&DEPTH_NML
+  DEPTH%SF       = -1.
+  DEPTH%FILENAME = 'depth.inp'
+  DEPTH%IDLA     = 1
+/
+
+! --- land/sea mask ----------------------------------------------------
+! 0 = excluded land, 1 = sea, 2 = active boundary, 3 = excluded grid point.
+! We mark column i=1 as land so waves have a coastline to grow away from.
+&MASK_NML
+  MASK%FILENAME = 'mask.inp'
+  MASK%IDLA     = 1
+/
+
+! -------------------------------------------------------------------- !
+! end of ww3_grid.nml
+! -------------------------------------------------------------------- !
