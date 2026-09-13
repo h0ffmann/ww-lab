@@ -76,3 +76,6 @@ Thumbs.db
 *.log
 *.tar.gz
 result
+
+# repo media (social card, screenshots) is tracked despite the *.png rule above
+!docs/media/*.png
