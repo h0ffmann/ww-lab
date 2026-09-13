@@ -103,8 +103,10 @@ The `WW3/` submodule is your fork, kept in step with upstream by `just src-sync`
 
 ## Publications (markdown → PDF)
 
-A standalone `flake.nix` at the repo root provides pandoc, TeX Live and Python; `nix build .`
-produces every PDF in a sandbox and CI commits them to `pdf/` on `main`.
+The toolchain (pandoc, TeX Live, Python) comes from
+[`nix-config/labs/publisher`](https://github.com/h0ffmann/nix-config/tree/main/labs/publisher), which
+the root `flake.nix` consumes through its `mkPdf` helper; `nix build .` produces every PDF in a
+sandbox and CI commits them to `pdf/` on `main`.
 
 ```bash
 just book                 # course/*.md -> build/ww3-lab-course.pdf (one chapter per lesson)
