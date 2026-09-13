@@ -29,6 +29,18 @@ prereqs:
 ww3:
     nix develop "{{pratico}}#ww3"
 
+# Interactive shell: toolchain + zsh-ai (Ctrl+O -> local Ollama model) + ai-jail. Works from any cwd.
+dev:
+    nix develop "{{pratico}}"
+
+# One-shot question to the local model through llm, e.g. `just ask "list files over 100 MB"`.
+ask *question:
+    IN_PRATICO=1 nix develop "{{pratico}}" --command bash -c 'llm -m "$LLM_MODEL" "$@"' _ "$@"
+
+# Pull the Ollama model the shell expects (qwen2.5-coder:7b; LLM_MODEL overrides).
+pull:
+    just -f {{pratico}}/justfile pull
+
 # Run one command inside the toolchain shell, e.g. `just ww3-run gfortran --version`.
 ww3-run *cmd:
     nix develop "{{pratico}}#ww3" --command "$@"
