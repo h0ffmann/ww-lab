@@ -271,6 +271,7 @@ extern "C" void ww_srce_batch(int nsea, int nspec, int nk, int nth,
 Rules that keep this safe:
 
 - Fortran arrays are passed assumed-size with explicit dims; shapes are asserted on the C++ side (`KOKKOS_ASSERT` in Debug, error code in Release).
+- Mind WW3's extents: `CG` and `WN` are allocated `(0:NK+1, 0:NSEA)` in `W3ADATMD` `(v)`, and `VA` is `(NSPEC, NSEA)` with `ISP = ITH + (IK-1)*NTH` (θ fastest) `(v)`. The shim above passes `CG(NK, NSEA)`; the caller must slice (`CG(1:NK, 1:NSEA)`, which copies) or the interface must declare the extended extent and index accordingly.
 - `INTENT(IN)` arrays become `const float*`; `VALUE` scalars are passed by value. No derived types across the boundary in phase 1 (flatten).
 - MPI: Fortran owns `MPI_Init`. Pass the communicator as `MPI_Comm_c2f` integer and convert with `MPI_Comm_f2c` in C++. C++ never calls `MPI_Init/Finalize`.
 - Kokkos: `ww_kokkos_init` is called once from `W3INIT` after `MPI_INIT`, `ww_kokkos_finalize` before `MPI_FINALIZE`. Kokkos needs the local GPU chosen per rank (`--kokkos-device-id` or `Kokkos::InitializationSettings().set_device_id(rank % ngpus)`).
