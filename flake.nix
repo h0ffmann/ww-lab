@@ -19,6 +19,27 @@
         ]);
         py = pkgs.python3.withPackages (ps: [ ps.openai ]);
         pubsTools = [ pkgs.pandoc tex py pkgs.just pkgs.poppler-utils ];
+        # Sandboxed builds: only what the scripts read, so unrelated edits don't rebuild PDFs.
+        src = pkgs.lib.cleanSourceWith {
+          src = ./.;
+          filter = path: _type:
+            let p = toString path; r = toString ./.;
+            in pkgs.lib.any (d: p == "${r}/${d}" || pkgs.lib.hasPrefix "${r}/${d}/" p) [ "course" "pubs" "scripts" ];
+        };
+        mkPdf = name: args: pkgs.stdenv.mkDerivation {
+          inherit name src;
+          nativeBuildInputs = pubsTools;
+          dontConfigure = true;
+          buildPhase = ''
+            export HOME=$TMPDIR TEXMFVAR=$TMPDIR/texmf-var
+            OUT_DIR=$TMPDIR/out bash scripts/build_pdf.sh ${args}
+          '';
+          installPhase = "mkdir -p $out; cp $TMPDIR/out/*.pdf $out/";
+        };
+        book = mkPdf "ww3-lab-course" "book";
+        proposalPt = mkPdf "proposal-pt" "proposal pt";
+        proposalEn = mkPdf "proposal-en" "proposal en";
+        all = pkgs.symlinkJoin { name = "ww3-lab-pubs"; paths = [ book proposalPt proposalEn ]; };
       in {
         devShells.default = pkgs.mkShell {
           name = "ww3-lab-pubs";
@@ -27,5 +48,7 @@
             echo "pubs: pandoc $(pandoc --version | head -1 | cut -d' ' -f2) | $(xelatex --version | head -1)"
           '';
         };
+        packages = { inherit book all; proposal-pt = proposalPt; proposal-en = proposalEn; default = all; };
+        checks.pubs = all;
       });
 }
