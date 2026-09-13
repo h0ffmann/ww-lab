@@ -4,7 +4,7 @@
   inputs = {
     # The markdown -> LaTeX -> PDF toolchain and the mkPdf helper live in nix-config so other
     # repositories can reuse them. Point at `main` once h0ffmann/nix-config#34 is merged.
-    publisher.url = "github:h0ffmann/nix-config/feat/labs-publisher?dir=labs/publisher";
+    publisher.url = "github:h0ffmann/nix-config?dir=labs/publisher";
     nixpkgs.follows = "publisher/nixpkgs"; # only for symlinkJoin; same pin as the toolchain
   };
 

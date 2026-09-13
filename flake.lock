@@ -22,17 +22,16 @@
       },
       "locked": {
         "dir": "labs/publisher",
-        "lastModified": 1789325388,
-        "narHash": "sha256-igseQIUYGsRt6fquWiA/NzsiFyWm1sD3O0wexNrvpR4=",
+        "lastModified": 1789325873,
+        "narHash": "sha256-eMMBK+GOHZ8vH+pO/zy1uP1VmczwLjf74oZjoT+N4qM=",
         "owner": "h0ffmann",
         "repo": "nix-config",
-        "rev": "1d3477894c1de99e0f6ce9f11fa6a9d5d3611dd4",
+        "rev": "1c0f46a1f97b9f7754d6bb12c41d4294c079e142",
         "type": "github"
       },
       "original": {
         "dir": "labs/publisher",
         "owner": "h0ffmann",
-        "ref": "feat/labs-publisher",
         "repo": "nix-config",
         "type": "github"
       }
