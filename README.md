@@ -1,12 +1,8 @@
-# wavewatch (III/IV)lab
+# wavewatch (III/IV) lab
 
 A bootstrap repo for playing with **WAVEWATCH III** (WW3), NOAA/NCEP's third-generation
 spectral wind-wave model. Built as a self-paced course: build the Fortran, run real cases,
 drive it from Python, then poke at the GPU question.
-
-Assembled 2026-09-11. Nothing here has been executed end-to-end on your machine — treat it
-as a well-researched starting point, not a guarantee. Every place where I'm unsure is marked
-with `⚠`.
 
 ---
 
