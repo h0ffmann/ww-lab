@@ -1,0 +1,47 @@
+# pubs — build every PDF with nix flake check; upload as artifacts; on main, also translate the
+# proposal (when TRANSLATE_* secrets are set) and commit pdf/ + pubs/proposal/pt back.
+name: Publications
+
+on:
+  pull_request:
+    paths: ['course/**', 'pubs/**', 'scripts/build_pdf.sh', 'scripts/book_prep.py', 'scripts/translate_md.py', 'tests/**', 'flake.nix', 'flake.lock', '.github/workflows/pubs.yml']
+  push:
+    branches: [main]
+    paths: ['course/**', 'pubs/**', 'scripts/build_pdf.sh', 'scripts/book_prep.py', 'scripts/translate_md.py', 'tests/**', 'flake.nix', 'flake.lock', '.github/workflows/pubs.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: DeterminateSystems/nix-installer-action@v16
+      - uses: DeterminateSystems/magic-nix-cache-action@v9
+      - name: unit tests
+        run: nix develop . --command python3 -m unittest discover -s tests -v
+      - name: translate EN -> PT (main only, needs TRANSLATE_BASE_URL / TRANSLATE_API_KEY / TRANSLATE_MODEL secrets)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          TRANSLATE_BASE_URL: ${{ secrets.TRANSLATE_BASE_URL }}
+          TRANSLATE_API_KEY: ${{ secrets.TRANSLATE_API_KEY }}
+          TRANSLATE_MODEL: ${{ secrets.TRANSLATE_MODEL }}
+        run: |
+          if [ -z "$TRANSLATE_API_KEY" ]; then echo "no TRANSLATE_API_KEY secret — skipping translation, pt/ stays as committed"; exit 0; fi
+          nix develop . --command python3 scripts/translate_md.py
+      - name: build all PDFs (nix flake check)
+        run: nix flake check --print-build-logs && nix build . && mkdir -p pdf && cp -L result/*.pdf pdf/
+      - uses: actions/upload-artifact@v4
+        with: { name: 'pubs-pdfs-${{ github.sha }}', path: 'pdf/*.pdf', retention-days: 30 }
+      - name: commit pdf/ and pt/ (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f pdf/*.pdf pubs/proposal/pt pubs/proposal/.translation-cache.json
+          git diff --staged --quiet || git commit -m "ci: rebuild PDFs [skip ci]"
+          git push

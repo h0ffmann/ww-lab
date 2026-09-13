@@ -21,6 +21,7 @@ drive it from Python, then poke at the GPU question.
 | `docs/` | [`AWESOME-WW3_202609.md`](docs/AWESOME-WW3_202609.md), a curated link list; [`AGENTS_KOKKOS_202609.md`](docs/AGENTS_KOKKOS_202609.md), agent rules for a phased WW3 → Kokkos port; [`KOKKOS_H100_PLAN_202609.md`](docs/KOKKOS_H100_PLAN_202609.md), the single-H100 port plan |
 | `nix-config/` | Git submodule (sparse: only `labs/pratico`) — the pinned Nix toolchain WW3 is built with |
 | `WW3/` | Git submodule — the [h0ffmann/WW3](https://github.com/h0ffmann/WW3) fork of NOAA-EMC/WW3, with upstream as a second remote |
+| `pubs/` | Publications: the course book and the UFRJ/DEL project proposal (EN source, PT generated); PDFs land in `pdf/` on `main` |
 | `justfile` | Every task in this repo: `just` lists them |
 
 ## Quickstart
@@ -99,6 +100,29 @@ sparse checkout, not real edits; `git -C nix-config status` is clean.
 The `WW3/` submodule is your fork, kept in step with upstream by `just src-sync`
 (`just src-st` shows pinned vs. fork vs. upstream). Pass `WW3` as the last argument of
 `build`, `regtest` or `rt` to build the fork instead of `~/src/WW3`.
+
+## Publications (markdown → PDF)
+
+A standalone `flake.nix` at the repo root provides pandoc, TeX Live and Python; `nix build .`
+produces every PDF in a sandbox and CI commits them to `pdf/` on `main`.
+
+```bash
+just book                 # course/*.md -> build/ww3-lab-course.pdf (one chapter per lesson)
+just proposal en          # pubs/proposal/en/*.md -> build/proposal_en.pdf (DEL proposal layout)
+just proposal pt ieee     # Portuguese copy; second arg picks the citation style: abnt (default) | ieee
+just translate            # pubs/proposal/en -> pt via any OpenAI-compatible endpoint (changed files only)
+just pubs                 # all three
+```
+
+The proposal is written in English under `pubs/proposal/en/`; `pubs/proposal/pt/` is generated
+and overwritten, so edit the English or the translator's prompt, never the Portuguese. The DEL
+section names are a fixed glossary in `scripts/translate_md.py`. Header fields (student, advisors,
+date) live in `pubs/proposal/meta.{pt,en}.yaml`. The LaTeX layout is the department's own
+proposal template (`pubs/proposal/template.tex`, styles under `pubs/proposal/shared/`).
+
+Translation backend: set `TRANSLATE_BASE_URL`, `TRANSLATE_API_KEY` and `TRANSLATE_MODEL`
+(locally, `http://127.0.0.1:11434/v1` / `ollama` / an Ollama model works; in CI the same three
+names as repository secrets, otherwise the step is skipped and the committed `pt/` is used).
 
 ## Two things worth knowing before you invest
 
