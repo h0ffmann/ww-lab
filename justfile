@@ -85,6 +85,18 @@ clean-runs:
     find examples -name '*.out' -delete
 
 # ---------------------------------------------------------------------
+# Pull requests (ported from h0ffmann/marola)
+# ---------------------------------------------------------------------
+
+# Push the branch and create (or refresh) its PR with a body generated from the commits.
+pr *args:
+    scripts/pr.sh "$@"
+
+# Write or refresh a PR description from the branch's commits; `just uprd --dry-run`, `just uprd 12`.
+uprd *args:
+    scripts/uprd.sh "$@"
+
+# ---------------------------------------------------------------------
 # Submodules: nix-config (sparse, labs/pratico) and WW3 (fork of NOAA-EMC/WW3)
 # ---------------------------------------------------------------------
 
