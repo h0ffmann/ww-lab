@@ -19,7 +19,7 @@ drive it from Python, then poke at the GPU question.
 | `scripts/` | Get, build, and run WW3 (and SWAN); stage upstream regression tests |
 | `switches/` | Annotated switch files (WW3's compile-time feature selection) |
 | `env/` | conda environment + Dockerfile |
-| `docs/` | Planning docs: [`AGENTS_KOKKOS.md`](docs/AGENTS_KOKKOS.md) — operating coding agents on a phased WW3 → C++/Kokkos port |
+| `docs/` | Planning docs: [`AGENTS_KOKKOS_202609.md`](docs/AGENTS_KOKKOS_202609.md) (agent rules for a phased WW3 → Kokkos port), [`KOKKOS_H100_PLAN_202609.md`](docs/KOKKOS_H100_PLAN_202609.md) (single-H100 port plan: repo map, translation coverage, comparable ports) |
 | `nix-config/` | Git submodule (sparse: only `labs/pratico`) — the pinned Nix toolchain WW3 is built with |
 
 ## Quickstart
