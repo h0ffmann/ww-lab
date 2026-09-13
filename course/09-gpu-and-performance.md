@@ -58,7 +58,7 @@ baseline expectation:
 
 ### And WW3 is not where the GPU work is going
 
-NOAA has decided the answer is architectural, not incremental. **WAVEWATCH IV** is a
+NOAA has decided the answer is architectural, not incremental. **WAVEWATCH IV™** (WW4) is a
 ground-up rewrite whose stated drivers include, verbatim, that the rise of GPUs and other
 advanced architectures requires focusing on memory use and access rather than only on
 floating-point operations. WW4 Phase IV explicitly targets efficiency on CPUs *and* GPUs,

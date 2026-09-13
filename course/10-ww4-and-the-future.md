@@ -1,4 +1,4 @@
-# 10 — WAVEWATCH IV: what's coming, and how mature it is
+# 10 — WW4: what's coming, and how mature it is
 
 **Short version: WW4 is real, it is a full ground-up rewrite in C++ and Rust rather than a
 new WW3 version, and as of late 2026 it is pre-alpha. Learn WW3. Watch WW4.**

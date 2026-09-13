@@ -25,9 +25,9 @@ SOFTWARE.
 This licence covers the teaching material, scripts, namelists, and example code
 in this repository only.
 
-WAVEWATCH III is developed and distributed by NOAA/NCEP/EMC under its own
-terms; see https://github.com/NOAA-EMC/WW3. No WW3 source code is vendored
-here. Upstream regression-test inputs are fetched at runtime, not redistributed.
+WAVEWATCH III® (a trademark of NOAA's National Weather Service) is developed and
+distributed by NOAA/NCEP/EMC under its own terms; see https://github.com/NOAA-EMC/WW3.
+No WW3 source code is vendored here; `WW3/` is a git submodule pointer to a fork. Upstream regression-test inputs are fetched at runtime, not redistributed.
 
-Third-party tools referenced in AWESOME-WW3.md carry their own licences
+Third-party tools referenced in docs/AWESOME-WW3_202609.md carry their own licences
 (pyww3 is GPL-3.0, wavespectra is MIT, and so on).
