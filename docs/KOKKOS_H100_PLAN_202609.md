@@ -3,6 +3,8 @@
 
 Prepared 9 September 2026. Supersedes the Rust plan of the same date. Figures marked "est." are estimates. Module names are from the WW3 v7.x source tree; verify line counts against the pinned `develop` commit in Task 3.
 
+> **Review notes (2026-09-13, checked against the `WW3/` submodule, 7.14 `develop` @ 761cf79d).** Verified `(v)`: the CPP transition (`#ifdef W3_xxx`, 239 guards in `w3srcemd.F90` alone, no `.ftn` files), `model/src` size (145 files, ~258k lines of `.F90`, ~267k with PDLIB/SCRIP), 64 regtests, `VA(NSPEC, 0:NSEALM)` with spectrum contiguous per point, `SIG(0:NK+1)`, `MAPSF(NSEA,3)`, `ISP = ITH + (IK-1)*NTH`, the `TAUHF`/`TAUHFT` tables in `w3src4md`, and every file and routine name in §3 except those corrected inline below. Corrected: `constants.F90` has no `RTYPE` (plain default `REAL`); `W3GRML`, `SETUGIOBP`, `DIAGNL` do not exist; `w3iogoncmd`, `w3sxxxmd`, `wmiobcmd`, `ww3_multi_esmf` and the `wav_*` NUOPC cap files are not in the pinned tree (only `wmesmfmd`); ST4 has no `SWELLFT` table (swell dissipation is parametric via `SSWELLF`). Not verified `⚠`: line-count estimates for the exercised subset, the ORNL 78 % figure, and the DOE/Omega statements. Kokkos: 5.1.1 is April 2026 as stated, but 5.2.2 (10 Sep 2026) is current; pin deliberately.
+
 ---
 
 ## 1. Executive Summary
@@ -62,20 +64,20 @@ Legend for the **Port** column: **CORE** = translate to C then Kokkos; **CPU-C**
 
 | File | Role | Key contents | Port | Translation notes |
 |---|---|---|---|---|
-| `constants.F90` | Physical/numerical constants, `RTYPE` real kind | `GRAV`, `PI`, `TPI`, `DWAT`, `DAIR`, `RADIUS` | CORE | Copy with `file:line` citation for each literal |
+| `constants.F90` | Physical/numerical constants (default `REAL`, no kind parameter `(v)`) | `GRAV`, `PI`, `TPI`, `DWAT`, `DAIR`, `RADIUS` | CORE | Copy with `file:line` citation for each literal |
 | `w3gdatmd.F90` | Grid data (`GRID` type + module pointers) | `NX,NY,NSEA,NSEAL,NK,NTH,NSPEC`, `XGRD,YGRD`, `ZB`, `MAPSTA,MAPST2,MAPFS,MAPSF`, `SIG,DSIP,TH,ESIN,ECOS,ES2,EC2,ESC`, `DTCFL,DTMAX,DTMIN,DTCFLI`, `FLAGLL,GTYPE,ICLOSE`, physics parameters (`SSWELLF`, ST4 `ZWND` ... ) | CORE | The `W3SETG(IMOD)` pointer-swap idiom: module-level pointers re-targeted per grid. In C: one `Grid` struct passed explicitly. Largest single source of hidden global state. |
 | `w3wdatmd.F90` | Wave data | `VA(NSPEC,NSEAL)` spectrum, `UST,USTDIR,ASF,FPIS`, `TIME`, ice/level fields | CORE | `VA` layout is `[spec][sea]`, Fortran column-major → spectrum contiguous per point. Keep. |
 | `w3adatmd.F90` | Auxiliary data | `CG,WN,DW,UA,UD,U10,U10D,CX,CY,AS,ITIME,IAPPRO,DTDYN,FCUT`, `SPPNT`, MPI bookkeeping (`IAPPRO` rank map, `MPI_COMM_WAVE`) | CORE (non-MPI parts) | Split: numerics fields → struct; MPI fields → DROP |
 | `w3odatmd.F90` | Output data | Output flags, field arrays (`HS,WLM,T02,DIR,SPR,...`), point-output locations, unit numbers | CORE (field arrays) / CPU-C (file bookkeeping) | |
 | `w3idatmd.F90` | Input fields | Wind/current/level/ice time slices for interpolation | CPU-C | |
 | `w3timemd.F90` | Date/time arithmetic | `DSEC21, TICK21, STME21` | CPU-C | Pure; easy |
-| `w3servmd.F90` | Service routines | `STRACE`, `EXTCDE`, `NEXTLN`, `WWDATE`, `DIAGNL` | CPU-C | `STRACE` behind `W3_S` — compile out |
+| `w3servmd.F90` | Service routines | `STRACE`, `EXTCDE`, `NEXTLN`, `WWDATE` (`DIAGNL` does not exist `(v)`) | CPU-C | `STRACE` behind `W3_S` — compile out |
 | `w3arrymd.F90` | Array printing helpers | `PRTBLK`, `OUTA2I` | DROP | Debug only |
 | `w3dispmd.F90` | Dispersion relation | `WAVNU1`, `WAVNU2`, `WAVNU3`, `DISTAB` lookup tables | CORE | First leaf routines to translate |
 | `w3cspcmd.F90` | Spectral conversion | `W3CSPC` (interpolate between spectral grids) | CPU-C | Used for boundary/initial data |
-| `w3gsrumd.F90` | Grid search / interpolation | `W3GRMP`, `W3GRML` | CPU-C | Forcing interpolation setup |
+| `w3gsrumd.F90` | Grid search / interpolation | `W3GRMP` (generic over `_R4`/`_R8`) `(v)` | CPU-C | Forcing interpolation setup |
 | `w3parall.F90` | Parallel infrastructure | `INIT_GET_ISEA`, `INIT_GET_JSEA_ISPROC`, `SYNCHRONIZE_*`, PDLIB helpers | DROP (single process) | Provide trivial identity mappings `ISEA=JSEA` |
-| `w3triamd.F90` | Unstructured grid setup | Triangle connectivity, `SETUGIOBP` | COND | Only for unstructured |
+| `w3triamd.F90` | Unstructured grid setup | Triangle connectivity (no `SETUGIOBP` in the tree `(v)`) | COND | Only for unstructured |
 | `w3metamd.F90`, `w3ounfmetamd.F90` | Output metadata | NetCDF attribute tables | DROP | Post-processors keep it |
 | `w3nml*md.F90` (shel, grid, ounf, ounp, bounc, trnc, prnc, multi) | Namelist readers | | DROP | Replace with TOML/JSON config for the port |
 | `w3macros.h` | CPP macros | `CHECK_ALLOC_STATUS`, etc. | — | |
@@ -95,7 +97,7 @@ Legend for the **Port** column: **CORE** = translate to C then Kokkos; **CPU-C**
 | `w3iopomd.F90` | Point output (`W3IOPO`, `W3IOPE`) | CPU-C | Small |
 | `w3iobcmd.F90` | Boundary condition I/O (`W3IOBC`) | COND | Needed for nested regional domains |
 | `w3iotrmd.F90`, `w3iosfmd.F90` | Track output, spectral partition output | DROP | |
-| `w3iogoncmd.F90` | Direct NetCDF gridded output | DROP | Write native `out_grd.ww3`; run `ww3_ounf` |
+| `w3iogoncmd.F90` | Direct NetCDF gridded output (not in the pinned tree `(v)`) | DROP | Write native `out_grd.ww3`; run `ww3_ounf` |
 | `w3partmd.F90` | Spectral partitioning (watershed) | COND | Only if partition output is used operationally |
 | `w3profsmd.F90`, `w3profsmd_pdlib.F90`, `pdlib_field_vec.F90`, `PDLIB/yow*.F90` | Unstructured propagation (explicit N-scheme and implicit), domain decomposition | COND / DROP | Substantial; defer |
 | `w3pro1md.F90` | PR1: first-order propagation | COND | |
@@ -124,7 +126,7 @@ Legend for the **Port** column: **CORE** = translate to C then Kokkos; **CPU-C**
 | `REF0/1` | `w3ref1md.F90` | Shoreline reflection | REF0 |
 | `UOST` | `w3uostmd.F90` | Unresolved obstacles (sub-grid islands) | often on for regional grids |
 | `IG0/1` | `w3gig1md.F90` | Infragravity waves | IG0 |
-| `XX0` … | `w3sxxxmd.F90` | User slot | XX0 |
+| `XX0` … | (no `w3sxxxmd.F90` in the pinned tree `(v)`) | User slot | XX0 |
 | `FLX0/1/2/3/4/5` | `w3flx1md` … `w3flx5md` | Air–sea flux / drag | FLX0 (ST4 computes its own) |
 | `SEED`, `MLIM`, `WNT*`, `WNX*`, `CRT*`, `CRX*`, `RWND`, `WCOR`, `TIDE` | flags inside `w3srcemd`/`w3updtmd` | Seeding, limiter, interpolation options, wind corrections, tides | Read from the switch file |
 
@@ -132,12 +134,12 @@ Legend for the **Port** column: **CORE** = translate to C then Kokkos; **CPU-C**
 
 | File(s) | Role | Port |
 |---|---|---|
-| `wmmdatmd, wminitmd, wmwavemd, wmgridmd, wmfinlmd, wmiobcmd, wmiopomd, wmunitmd, wmupdtmd, wmscrpmd, wmesmfmd` + `SCRIP/` | `ww3_multi` mosaic driver, grid-to-grid remapping | DROP |
+| `wmmdatmd, wminitmd, wmwavemd, wmgridmd, wmfinlmd, wmiopomd, wmunitmd, wmupdtmd, wmscrpmd, wmesmfmd` + `SCRIP/` (`wmiobcmd` is not in the pinned tree `(v)`) | `ww3_multi` mosaic driver, grid-to-grid remapping | DROP |
 | `w3oacpmd, w3agcmmd, w3ogcmmd, w3igcmmd` | OASIS coupling | DROP |
-| `wav_comp_nuopc, wav_import_export, wav_kind_mod, wav_pio_mod, wav_restart_mod, wav_history_mod, wav_shel_inp, wav_wrapper_mod, wav_shr_mod` | NUOPC cap for UFS/CESM | DROP |
+| `wav_comp_nuopc, wav_import_export, wav_kind_mod, wav_pio_mod, wav_restart_mod, wav_history_mod, wav_shel_inp, wav_wrapper_mod, wav_shr_mod` (none present in the pinned tree `(v)`; the cap lives outside `model/src` or in a separate repo) | NUOPC cap for UFS/CESM | DROP |
 | `ww3_grid, ww3_strt, ww3_prep, ww3_prnc, ww3_bound, ww3_bounc` | Pre-processors | KEEP (Fortran executables) |
 | `ww3_shel` | Single-grid driver, namelist parsing | Replace with a C++ `main` + TOML |
-| `ww3_multi`, `ww3_multi_esmf` | Multi-grid driver | DROP |
+| `ww3_multi` (`ww3_multi_esmf` not in the pinned tree `(v)`) | Multi-grid driver | DROP |
 | `ww3_outf, ww3_outp, ww3_ounf, ww3_ounp, ww3_trck, ww3_trnc, ww3_grib, ww3_gspl, ww3_gint, ww3_systrk, ww3_uprstr, ww3_prtide` | Post-processors and tools | KEEP |
 
 **Size estimate.** Full `model/src` is roughly 250–300k lines including PDLIB, SCRIP, multi-grid, coupling and all physics variants. The code *exercised* by a typical regular-grid ST4/NL1/PR3/BT1/DB1 forecast is on the order of 25–35k lines (est.) — the same order as FESOM2's 74k-line core after configuration collapse, which yielded a 20k-line C port.
@@ -177,7 +179,7 @@ Legend for the **Port** column: **CORE** = translate to C then Kokkos; **CPU-C**
 6. **GSE alleviation** in PR3 adds a diffusion operator with its own stability limit.
 7. **Boundary points** (`MAPSTA = 2`) are set from `nest.ww3` each step; they must not be propagated into.
 8. **Output timing.** Output-field integration (`W3OUTG`) happens at output times only, from the current spectrum — on the GPU, this is the only per-output device→host transfer.
-9. **The two ST4 lookup tables** (`TAUHF`, swell dissipation `SWELLFT`) are built at init from constants — build them in C identically and compare table-to-table.
+9. **The ST4 lookup tables** (`TAUHF`/`TAUHFT` in `w3src4md` `(v)`; there is no `SWELLFT` table, swell dissipation is parametric via the `SSWELLF` coefficients) are built at init from constants — build them in C identically and compare table-to-table.
 10. **`FCUT`/tail parametric extension**: the spectral tail beyond `FCUT` is prescribed (`f^-5`); translate the tail-handling exactly.
 
 ### 4.3 Verification artefacts required

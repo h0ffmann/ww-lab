@@ -54,7 +54,7 @@ input with the `ST6` dissipation and expect anything sensible.
 WW3 does **not** know where any individual wave crest is. It tracks statistics. If you want
 a surface you can render, or wave-by-wave runup on a beach, or slamming loads on a hull,
 you want a different class of model entirely (SWASH, XBeach, FUNWAVE, OpenFOAM — see
-`AWESOME-WW3.md`).
+`docs/AWESOME-WW3_202609.md`).
 
 What WW3 gives you is: the spectrum, and everything derivable from it. $H_s$, peak period,
 mean direction, directional spread, Stokes drift, radiation stresses, partitioned swell

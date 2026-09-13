@@ -10,7 +10,7 @@ drive it from Python, then poke at the GPU question.
 
 | Path | What it is |
 |---|---|
-| `AWESOME-WW3.md` | Curated, annotated link list: source, docs, courses, tooling, papers, data, other models |
+| `docs/AWESOME-WW3_202609.md` | Curated, annotated link list: source, docs, courses, tooling, papers, data, other models |
 | `course/` | 12 lessons, in order, from "what is a wave spectrum" through GPUs, WAVEWATCH IV, and SWAN |
 | `examples/` | Self-contained runnable cases with real `.nml` input files |
 | `exercises/` | `pyww3` exercises (with solutions) — drive WW3 from Python |
@@ -159,7 +159,7 @@ MIT for everything in this repo. See [`LICENSE`](LICENSE).
 
 WW3 itself is distributed by NOAA/EMC under its own terms. No WW3 source is vendored here —
 `scripts/01_get_ww3.sh` clones it, and upstream regression-test inputs are fetched rather
-than redistributed. Third-party tools listed in `AWESOME-WW3.md` carry their own licences
+than redistributed. Third-party tools listed in `docs/AWESOME-WW3_202609.md` carry their own licences
 (`pyww3` is GPL-3.0, `wavespectra` is MIT).
 
 ## Contributing
