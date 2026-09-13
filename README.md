@@ -62,6 +62,20 @@ just toolchain   # exact pinned versions
 just smoke       # Fortran 2008 + MPI + NetCDF-4 build-and-run in the Nix sandbox
 ```
 
+Build and run WW3 itself in that shell. The source tree is `$WW3`, else `~/src/WW3`, the
+plain upstream NOAA-EMC clone; pass `WW3` as the last argument to use the fork submodule:
+
+```bash
+just get                 # clone upstream develop into ~/src/WW3 (WW3_DATA=1 to also fetch the FTP bundle)
+just rt                  # the simple regtest: build with ww3_tp1.1's own switch, run it (~30 s on 32 cores)
+just rt ww3_tp2.2 PR3_UQ # another test / switch_<sw> from its input/ dir;  ... PR3_UQ WW3 = on the fork
+just build [switch]      # full rebuild with a switch file (default switches/switch_lab_shrd)
+just regtest [test]      # rerun a test step by step against the current build (no rebuild)
+```
+
+`ww3_tp1.x` and `ww3_tp2.2` need no FTP data. Output lands in `<ww3>/regtests/<test>/work_lab/`;
+for `ww3_tp1.1` the gridded `ww3.196806.nc` should show `hs` starting at 2.5 m on the equator row.
+
 Fresh clone: `git clone --recurse-submodules …` then `just submodule-init` (the sparse
 checkout is local state, so it has to be set once per clone; the recipe is idempotent).
 

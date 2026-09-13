@@ -2,6 +2,7 @@
 # Run `just` for the list. Make targets in Makefile are unchanged.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
+set positional-arguments
 
 setup_script     := "scripts/ww-lab-tool-setup.sh"
 submodule_path   := "nix-config"
@@ -44,7 +45,7 @@ ww3:
 
 # Run one command inside the toolchain shell, e.g. `just ww3-run gfortran --version`.
 ww3-run *cmd:
-    nix develop "{{pratico}}#ww3" --command {{cmd}}
+    nix develop "{{pratico}}#ww3" --command "$@"
 
 # Print exact toolchain versions (delegates to pratico's justfile).
 toolchain:
@@ -83,3 +84,26 @@ src-st:
     @git -C WW3 fetch --quiet origin develop && git -C WW3 fetch --quiet upstream develop
     @echo "pinned: $(git -C WW3 rev-parse --short HEAD)  fork/develop: $(git -C WW3 rev-parse --short origin/develop)  upstream/develop: $(git -C WW3 rev-parse --short upstream/develop)"
     @echo "fork is $(git -C WW3 rev-list --count origin/develop..upstream/develop) commits behind upstream"
+
+# ---------------------------------------------------------------------
+# Build and regtest WW3 inside the Nix toolchain. <ww3> is the source
+# tree: $WW3, else ~/src/WW3 (the upstream NOAA-EMC clone from `just get`,
+# not the fork). Pass `WW3` to use the fork submodule:  just rt ww3_tp1.1 PR3_UQ WW3
+# ---------------------------------------------------------------------
+
+ww3_src := env_var_or_default("WW3", env_var("HOME") + "/src/WW3")
+
+# Clone upstream NOAA-EMC/WW3 develop into <ww3>. No FTP bundle unless WW3_DATA=1.
+get ww3=ww3_src:
+    WW3_DATA="${WW3_DATA:-0}" bash scripts/01_get_ww3.sh "{{ww3}}"
+
+# Full rebuild of <ww3> with <switch> (a path, or a name resolved in <ww3>/model/bin).
+build switch="switches/switch_lab_shrd" ww3=ww3_src:
+    nix develop "{{pratico}}#ww3" --command bash scripts/02_build_ww3.sh "{{ww3}}" "{{switch}}"
+
+# Run one upstream regtest step by step (grid, strt, shel, ounf, ounp) in <ww3>/regtests/<test>/work_lab.
+regtest test="ww3_tp1.1" ww3=ww3_src:
+    nix develop "{{pratico}}#ww3" --command bash scripts/03_run_regtest.sh "{{ww3}}" "{{test}}"
+
+# The simple regtest: build with the test's own switch_<sw>, then run it.
+rt test="ww3_tp1.1" sw="PR3_UQ" ww3=ww3_src: (build (ww3 + "/regtests/" + test + "/input/switch_" + sw) ww3) (regtest test ww3)
