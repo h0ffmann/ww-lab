@@ -19,6 +19,7 @@ drive it from Python, then poke at the GPU question.
 | `scripts/` | Get, build, and run WW3 (and SWAN); stage upstream regression tests |
 | `switches/` | Annotated switch files (WW3's compile-time feature selection) |
 | `env/` | conda environment + Dockerfile |
+| `nix-config/` | Git submodule (sparse: only `labs/pratico`) — the pinned Nix toolchain WW3 is built with |
 
 ## Quickstart
 
@@ -46,6 +47,44 @@ Optionally, get SWAN too — it's the right tool for the coastal cases WW3 is wr
 ```bash
 bash scripts/04_get_swan.sh ~/src/swan
 ```
+
+## Nix toolchain (reproducible gfortran / OpenMPI / NetCDF)
+
+Instead of `scripts/00_prereqs.sh`, the compilers and libraries can come from one locked
+nixpkgs revision via the [`nix-config/labs/pratico`](https://github.com/h0ffmann/nix-config/tree/main/labs/pratico) flake, which
+lives in `nix-config`, a sparse git submodule. A `justfile` at the repo root wraps it:
+
+```bash
+just up          # bump the submodule pin to origin/main and stage it  (just st = status)
+just ww3         # enter the toolchain-only shell  (== nix develop ./nix-config/labs/pratico#ww3)
+just ww3-run …   # run one command inside that shell, e.g. just ww3-run gfortran --version
+just toolchain   # exact pinned versions
+just smoke       # Fortran 2008 + MPI + NetCDF-4 build-and-run in the Nix sandbox
+```
+
+Fresh clone: `git clone --recurse-submodules …` then `just submodule-init` (the sparse
+checkout is local state, so it has to be set once per clone; the recipe is idempotent).
+
+What `just toolchain` prints today (`(v)` — this is the exact output on the lab machine):
+
+```
+$ just toolchain
+ww3 toolchain: GNU Fortran (GCC) 15.3.0 | mpirun (Open MPI) 5.0.10 | netcdf-c 4.10.1 / netcdf-fortran 4.4.6-development
+nixpkgs      eaad089433ca2bb662274377d33df3d0e51ef28b
+gfortran     GNU Fortran (GCC) 15.3.0
+openmpi      mpirun (Open MPI) 5.0.10
+netcdf-c     netCDF 4.10.1
+netcdf-f     netCDF-Fortran 4.4.6-development
+hdf5         h5dump: Version 1.14.6
+metis        /nix/store/kakzikafyrpx9pp49kxxgmjvvnymm6vr-metis-5.2.1
+parmetis     /nix/store/rdkv3jg7b52dw0qlkwx9f1aihjsm7xwb-parmetis-4.0.3-unstable-2023-03-26
+eccodes      2.48.0
+cmake        cmake version 4.4.2
+python       Python 3.14.7 numpy 2.5.1 xarray 2026.7.0
+```
+
+The `warning: Git tree '…/nix-config' has uncommitted changes` line Nix prints is the
+sparse checkout, not real edits; `git -C nix-config status` is clean.
 
 ## Two things worth knowing before you invest
 
@@ -93,7 +132,7 @@ realistic experiment plan in [`course/09-gpu-and-performance.md`](course/09-gpu-
 
 ## Repo layout notes
 
-- `make help` lists the convenience targets.
+- `make help` lists the convenience targets; `just` lists the Nix/submodule recipes.
 - CI (`.github/workflows/ci.yml`) checks Python and shell syntax, compiles the Fortran
   sandbox with gfortran, and link-checks the markdown. It does not build WW3 — that needs
   the NOAA FTP data bundle and takes too long for a free runner.
