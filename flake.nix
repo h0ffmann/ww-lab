@@ -15,7 +15,7 @@
           babel-portuges hyphen-portuguese
           dejavu fontspec unicode-math xetex
           booktabs caption enumitem float multirow tools
-          fvextra lineno microtype titlesec upquote xcolor csquotes
+          framed fvextra lineno microtype titlesec upquote xcolor csquotes
         ]);
         py = pkgs.python3.withPackages (ps: [ ps.openai ]);
         pubsTools = [ pkgs.pandoc tex py pkgs.just pkgs.poppler-utils ];

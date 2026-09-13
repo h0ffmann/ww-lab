@@ -1,0 +1,23 @@
+# pubs/book/defaults.yaml — pandoc defaults for the course book
+from: gfm+tex_math_dollars+footnotes+definition_lists+attributes
+to: pdf
+pdf-engine: xelatex
+top-level-division: chapter
+number-sections: true
+toc: true
+toc-depth: 2
+highlight-style: tango
+filters:
+  - pubs/book/filters/symbols.lua
+metadata:
+  title: "wavewatch lab — III & IV"
+  subtitle: "A self-paced course on WAVEWATCH III, from the wave spectrum to GPUs, WW4 and SWAN"
+  author: "Matheus Hoffmann"
+  date: "2026-09"
+  lang: en-US
+  documentclass: book
+  classoption: [a4paper, 11pt, openany]
+  geometry: margin=2.5cm
+  linkcolor: NavyBlue
+  urlcolor: NavyBlue
+  colorlinks: true

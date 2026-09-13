@@ -1,0 +1,33 @@
+% pubs/book/template.tex — minimal book template. Fonts loaded by filename from TeX Live's
+% dejavu package (no fontconfig needed inside the Nix sandbox).
+\documentclass[$for(classoption)$$classoption$$sep$,$endfor$]{$documentclass$}
+\usepackage[$geometry$]{geometry}
+\usepackage{fontspec}
+\setmainfont{DejaVuSerif}[Extension=.ttf, UprightFont=*, BoldFont=*-Bold, ItalicFont=*-Italic, BoldItalicFont=*-BoldItalic]
+\setsansfont{DejaVuSans}[Extension=.ttf, UprightFont=*, BoldFont=*-Bold, ItalicFont=*-Oblique]
+\setmonofont{DejaVuSansMono}[Extension=.ttf, UprightFont=*, BoldFont=*-Bold, Scale=0.88]
+\newfontfamily\symbolfont{DejaVuSans}[Extension=.ttf, UprightFont=*, BoldFont=*-Bold]  % dingbats, ⚠, emoji-ish glyphs (filters/symbols.lua)
+\usepackage{amsmath,amssymb}
+\usepackage[$babel-lang$]{babel}
+\usepackage{microtype}
+\usepackage{booktabs,longtable,array,multirow}
+\usepackage{graphicx}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{fvextra}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\},breaklines,fontsize=\small}
+$if(highlighting-macros)$$highlighting-macros$$endif$
+\usepackage{hyperref}
+\hypersetup{colorlinks=$colorlinks$,linkcolor=$linkcolor$,urlcolor=$urlcolor$,pdftitle={$title$},pdfauthor={$author$}}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setlength{\parskip}{6pt plus 2pt}
+\setlength{\parindent}{0pt}
+\title{$title$$if(subtitle)$\\[0.5em]{\large $subtitle$}$endif$}
+\author{$author$}
+\date{$date$}
+\begin{document}
+\frontmatter
+\maketitle
+$if(toc)$\tableofcontents$endif$
+\mainmatter
+$body$
+\end{document}
