@@ -1,0 +1,16 @@
+# pubs/proposal/meta.pt.yaml — header, date and signature fields for the Portuguese PDF (hand-written)
+university: UNIVERSIDADE FEDERAL DO RIO DE JANEIRO
+school: ESCOLA POLITÉCNICA
+department: DEPARTAMENTO DE ENGENHARIA ELETRÔNICA E DE COMPUTAÇÃO
+doc_kind: PROPOSTA DE PROJETO DE GRADUAÇÃO
+student: Matheus Hoffmann Fernandes Santos
+email: hoffmann@poli.ufrj.br
+advisor: "A definir, Dr."            # orientador DEL/UFRJ — preencher
+coadvisor: "Pedro Veras Guimarães, Dr."
+coadvisor_affiliation: "LabECO, Departamento de Engenharia Mecânica, UFSC"
+city: Rio de Janeiro
+date: 13 de setembro de 2026
+label_student: Aluno
+label_advisor: Orientador
+label_coadvisor: Coorientador
+link-citations: true

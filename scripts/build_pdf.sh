@@ -37,13 +37,14 @@ else
   mapfile -t inputs < <(ls "$src"/[0-9][0-9]-*.md 2>/dev/null | sort)
   [ "${#inputs[@]}" -gt 0 ] || { echo "build_pdf: no $src/NN-*.md" >&2; exit 1; }
   case "$lang" in pt) plang=pt-BR ;; en) plang=en-US ;; esac
+  export TEXINPUTS="$root/pubs/proposal/shared:${TEXINPUTS:-}"   # pagina.sty, portland.sty
   pandoc "${inputs[@]}" \
     --template "$root/pubs/proposal/template.tex" \
     --metadata-file "$root/pubs/proposal/meta.$lang.yaml" \
     --metadata lang="$plang" \
     --top-level-division=section --number-sections \
     --citeproc --bibliography "$root/pubs/proposal/refs.bib" --csl "$csl" \
-    --pdf-engine=xelatex \
+    --pdf-engine=pdflatex \
     --fail-if-warnings \
     -o "$out_dir/proposal_$lang.pdf"
   echo "build_pdf: $out_dir/proposal_$lang.pdf"
