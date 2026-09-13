@@ -1,54 +1,39 @@
 {
-  description = "ww3-lab publications: markdown -> LaTeX -> PDF (course book, UFRJ/DEL proposal)";
+  description = "ww3-lab publications: course book and UFRJ/DEL proposal, built with nix-config's labs/publisher toolchain";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/eaad089433ca2bb662274377d33df3d0e51ef28b"; # same pin as nix-config/labs/pratico
-    flake-utils.url = "github:numtide/flake-utils";
+    # The markdown -> LaTeX -> PDF toolchain and the mkPdf helper live in nix-config so other
+    # repositories can reuse them. Point at `main` once h0ffmann/nix-config#34 is merged.
+    publisher.url = "github:h0ffmann/nix-config?dir=labs/publisher";
+    nixpkgs.follows = "publisher/nixpkgs"; # only for symlinkJoin; same pin as the toolchain
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        # Package set discovered with \listfiles on both documents; keep sorted.
-        tex = pkgs.texliveMedium.withPackages (ps: with ps; [
-          babel-portuges hyphen-portuguese
-          dejavu fontspec unicode-math xetex
-          booktabs caption enumitem float multirow tools
-          framed fvextra lineno microtype titlesec upquote xcolor csquotes
-        ]);
-        py = pkgs.python3.withPackages (ps: [ ps.openai ]);
-        pubsTools = [ pkgs.pandoc tex py pkgs.just pkgs.poppler-utils ];
-        # Sandboxed builds: only what the scripts read, so unrelated edits don't rebuild PDFs.
-        src = pkgs.lib.cleanSourceWith {
-          src = ./.;
-          filter = path: _type:
-            let p = toString path; r = toString ./.;
-            in pkgs.lib.any (d: p == "${r}/${d}" || pkgs.lib.hasPrefix "${r}/${d}/" p) [ "course" "pubs" "scripts" ];
-        };
-        mkPdf = name: args: pkgs.stdenv.mkDerivation {
-          inherit name src;
-          nativeBuildInputs = pubsTools;
-          dontConfigure = true;
-          buildPhase = ''
-            export HOME=$TMPDIR TEXMFVAR=$TMPDIR/texmf-var
-            OUT_DIR=$TMPDIR/out bash scripts/build_pdf.sh ${args}
-          '';
-          installPhase = "mkdir -p $out; cp $TMPDIR/out/*.pdf $out/";
-        };
-        book = mkPdf "ww3-lab-course" "book";
-        proposalPt = mkPdf "proposal-pt" "proposal pt";
-        proposalEn = mkPdf "proposal-en" "proposal en";
-        all = pkgs.symlinkJoin { name = "ww3-lab-pubs"; paths = [ book proposalPt proposalEn ]; };
-      in {
-        devShells.default = pkgs.mkShell {
-          name = "ww3-lab-pubs";
-          packages = pubsTools;
-          shellHook = ''
-            echo "pubs: pandoc $(pandoc --version | head -1 | cut -d' ' -f2) | $(xelatex --version | head -1)"
-          '';
-        };
-        packages = { inherit book all; proposal-pt = proposalPt; proposal-en = proposalEn; default = all; };
-        checks.pubs = all;
-      });
+  outputs = { self, publisher, nixpkgs }:
+    let
+      systems = builtins.attrNames publisher.devShells;
+      forAll = f: nixpkgs.lib.genAttrs systems f;
+      # Only what scripts/build_pdf.sh reads, so unrelated edits don't rebuild the PDFs.
+      src = nixpkgs.lib.cleanSourceWith {
+        src = ./.;
+        filter = path: _type:
+          let p = toString path; r = toString ./.;
+          in nixpkgs.lib.any (d: p == "${r}/${d}" || nixpkgs.lib.hasPrefix "${r}/${d}/" p) [ "course" "pubs" "scripts" ];
+      };
+    in
+    {
+      devShells = forAll (system: { default = publisher.devShells.${system}.default; });
+
+      packages = forAll (system:
+        let
+          inherit (publisher.lib.${system}) mkPdf;
+          pkgs = nixpkgs.legacyPackages.${system};
+          book = mkPdf { name = "ww3-lab-course"; inherit src; command = "bash scripts/build_pdf.sh book"; };
+          proposalPt = mkPdf { name = "proposal-pt"; inherit src; command = "bash scripts/build_pdf.sh proposal pt"; };
+          proposalEn = mkPdf { name = "proposal-en"; inherit src; command = "bash scripts/build_pdf.sh proposal en"; };
+          all = pkgs.symlinkJoin { name = "ww3-lab-pubs"; paths = [ book proposalPt proposalEn ]; };
+        in
+        { inherit book all; proposal-pt = proposalPt; proposal-en = proposalEn; default = all; });
+
+      checks = forAll (system: { pubs = self.packages.${system}.default; });
+    };
 }
