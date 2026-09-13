@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build two PDF products from markdown, reproducibly: the 12-lesson course book, and a ~10-page "Proposta de Projeto de Graduação" (PT source, EN generated) about reducing WW3 forecast time for ReNOMO at LabECO/UFSC.
+**Goal:** Build two PDF products from markdown, reproducibly: the 12-lesson course book, and a ~10-page "Proposta de Projeto de Graduação" (EN source, PT generated) about reducing WW3 forecast time for ReNOMO at LabECO/UFSC.
 
-**Architecture:** One shell script (`scripts/build_pdf.sh`) runs pandoc → xelatex for both products; a small Python pre-step prepares the book chapters (ids + cross-links); a Python translator turns `pubs/proposal/pt` into `pubs/proposal/en` with protected placeholders. A new root `flake.nix` supplies the toolchain (devShell) and sandboxed `nix build` packages; `just` recipes wrap the devShell; CI runs `nix flake check`, uploads PDFs, and commits them on `main`.
+**Architecture:** One shell script (`scripts/build_pdf.sh`) runs pandoc → xelatex for both products; a small Python pre-step prepares the book chapters (ids + cross-links); a Python translator turns `pubs/proposal/en` into `pubs/proposal/pt` with protected placeholders and a fixed heading glossary. A new root `flake.nix` supplies the toolchain (devShell) and sandboxed `nix build` packages; `just` recipes wrap the devShell; CI runs `nix flake check`, uploads PDFs, and commits them on `main`.
 
 **Tech Stack:** Nix flakes (nixpkgs `eaad089433ca2bb662274377d33df3d0e51ef28b`), pandoc 3.7, TeX Live 2025 via `texlive.combine` (xelatex, babel, DejaVu fonts by filename), Python 3 (`openai` client), just, GitHub Actions.
 
@@ -16,7 +16,7 @@
 - nixpkgs pinned to `eaad089433ca2bb662274377d33df3d0e51ef28b` (same as pratico).
 - One TeX engine everywhere: xelatex from `texlive.combine`. No Tectonic.
 - Every pandoc run uses `--fail-if-warnings`.
-- Portuguese is the proposal's source; `pubs/proposal/en/*.md` are generated and overwritten; `meta.en.yaml` is hand-written.
+- English is the proposal's source; `pubs/proposal/pt/*.md` are generated and overwritten; both `meta.*.yaml` are hand-written. Generated PT headings must be exactly: TÍTULO, ÊNFASE, TEMA, DELIMITAÇÃO, JUSTIFICATIVA, OBJETIVO, METODOLOGIA, CRONOGRAMA, Referências Bibliográficas.
 - Citation style option: `abnt` (default) or `ieee`; both CSL files vendored under `pubs/csl/`.
 - PDFs: `build/` locally (gitignored); `pdf/` committed by CI on `main` only.
 - `course/` content is read in place and never edited for the PDF.
@@ -36,8 +36,8 @@ scripts/translate_md.py                    PT→EN with placeholders and cache (
 tests/test_book_prep.py, tests/test_translate_md.py   unittest (Tasks 2, 4)
 pubs/book/{defaults.yaml,template.tex}     (Task 2)
 pubs/proposal/{template.tex,meta.pt.yaml,meta.en.yaml,refs.bib}   (Task 3)
-pubs/proposal/pt/0{1..8}-*.md              (Task 3)
-pubs/proposal/en/                          generated (Task 4)
+pubs/proposal/en/0{1..8}-*.md              (Task 3)
+pubs/proposal/pt/                          generated (Task 4)
 pubs/csl/{abnt.csl,ieee.csl}               (Task 3)
 justfile                                   + pubs recipes (Task 1, 2, 3, 4)
 .github/workflows/pubs.yml                 (Task 6)
@@ -167,7 +167,7 @@ book style="abnt":
 proposal lang="pt" style="abnt":
     nix develop "{{justfile_directory()}}" --command scripts/build_pdf.sh proposal {{lang}} {{style}}
 
-# Translate pubs/proposal/pt -> en (changed files only; --force, --dry-run).
+# Translate pubs/proposal/en -> pt (changed files only; --force, --dry-run).
 translate *args:
     nix develop "{{justfile_directory()}}" --command python3 scripts/translate_md.py "$@"
 
@@ -387,14 +387,14 @@ Tested: unittest tests/test_book_prep.py (2 pass); just book renders N pages, �
 
 ---
 
-### Task 3: Proposal — template, metadata, bibliography, styles, Portuguese text
+### Task 3: Proposal — template, metadata, bibliography, styles, English text
 
 **Files:**
-- Create: `pubs/proposal/template.tex`, `pubs/proposal/meta.pt.yaml`, `pubs/proposal/meta.en.yaml`, `pubs/proposal/refs.bib`, `pubs/csl/abnt.csl`, `pubs/csl/ieee.csl`, `pubs/proposal/pt/01-titulo.md … 08-cronograma.md`
+- Create: `pubs/proposal/template.tex`, `pubs/proposal/meta.pt.yaml`, `pubs/proposal/meta.en.yaml`, `pubs/proposal/refs.bib`, `pubs/csl/abnt.csl`, `pubs/csl/ieee.csl`, `pubs/proposal/en/01-title.md … 08-schedule.md`
 
 **Interfaces:**
-- Consumes: `scripts/build_pdf.sh proposal pt [style]` (Task 1).
-- Produces: metadata keys read by the template: `university`, `school`, `department`, `doc_kind`, `student`, `email`, `advisor`, `coadvisor`, `coadvisor_affiliation`, `city`, `date`, `label_student`, `label_advisor`, `label_coadvisor`, `refs_title`. The last PT file ends with `# Referências Bibliográficas {-}` and an empty `::: {#refs}\n:::` div so citeproc places the bibliography there.
+- Consumes: `scripts/build_pdf.sh proposal en [style]` (Task 1).
+- Produces: metadata keys read by the template: `university`, `school`, `department`, `doc_kind`, `student`, `email`, `advisor`, `coadvisor`, `coadvisor_affiliation`, `city`, `date`, `label_student`, `label_advisor`, `label_coadvisor`, `refs_title`. The last EN file ends with `# References {-}` and an empty `::: {#refs}\n:::` div so citeproc places the bibliography there.
 
 - [ ] **Step 1: Fetch the two CSL files**
 
@@ -546,26 +546,26 @@ link-citations: true
   howpublished = {\url{https://github.com/h0ffmann/ww-lab}} }
 ```
 
-- [ ] **Step 5: Write the eight PT section files** (~3 800 words total; the full text is authored during execution, following this outline and the spec's argument; each file starts with its `# ` heading exactly as below so pandoc numbers them 1–8)
+- [ ] **Step 5: Write the eight EN section files** (the translator maps the headings to the DEL Portuguese names) (~3 800 words total; the full text is authored during execution, following this outline and the spec's argument; each file starts with its `# ` heading exactly as below so pandoc numbers them 1–8)
 
 | File | Heading | Content (target words) |
 |---|---|---|
-| `01-titulo.md` | `# TÍTULO` | one sentence: *Redução do tempo de simulação e previsão do modelo WAVEWATCH III na operação da ReNOMO no LabECO/UFSC: opções de compilação, Fortran moderno e viabilidade de GPU* (40) |
-| `02-enfase.md` | `# ÊNFASE` | Computação (5) |
-| `03-tema.md` | `# TEMA` | WW3 as the operational spectral wave model; what a forecast cycle costs; why wall-clock bounds runs, members and resolution; the lab and the network; cites `ww3manual`, `renomo`, `labeco` (450) |
-| `04-delimitacao.md` | `# DELIMITAÇÃO` | the four-rung ladder (switches/flags; run config; targeted modern-Fortran refactors of measured hotspots; H100 feasibility as a study); what is out: `ww3_multi`, coupling, PDLIB, WW4 contributions, physics changes (600) |
-| `05-justificativa.md` | `# JUSTIFICATIVA` | the case: operational value of faster cycles; upstream WW3 has no GPU path, the only published port got ~1.3× on Summit and was transfer-bound (`ikuyajolu2023`); WAM6-GPU shows what full residency gives (`yuan2024`); WW4 is pre-alpha, C++, first release hoped 2027 (`on525`, `ww4repo`) so the lab's WW3 stays operational for years; Kokkos as the portability layer if rung 4 goes ahead (`trott2022`); explicit non-overlap paragraph (1 100) |
-| `06-objetivo.md` | `# OBJETIVO` | general objective + 5 specific, measurable objectives (reproducible benchmark; profile table; rung-by-rung speed-up with parity evidence; H100 feasibility memo; written recommendation to LabECO) (350) |
-| `07-metodologia.md` | `# METODOLOGIA` | profiling-first method; parity gates (bit-for-bit for build-flag rungs, tolerance for refactors); regtests + the lab's operational case; tooling (`wwlab`: Nix toolchain, just recipes, submodules, CI); how results are recorded; risks (600) |
-| `08-cronograma.md` | `# CRONOGRAMA` | intro sentence; markdown table (Etapa, Prazo) with 8 rows Oct 2026 → Apr 2027, caption `Table: Cronograma do Projeto de Graduação.`; then `# Referências Bibliográficas {-}` + `::: {#refs}\n:::` (150 + table) |
+| `01-title.md` | `# TITLE` | one sentence: *Reducing simulation and forecast time of the WAVEWATCH III model in ReNOMO operations at LabECO/UFSC: compile options, modern Fortran and GPU feasibility* (40) |
+| `02-emphasis.md` | `# EMPHASIS` | Computing (5) |
+| `03-theme.md` | `# THEME` | WW3 as the operational spectral wave model; what a forecast cycle costs; why wall-clock bounds runs, members and resolution; the lab and the network; cites `ww3manual`, `renomo`, `labeco` (450) |
+| `04-scope.md` | `# SCOPE` | the four-rung ladder (switches/flags; run config; targeted modern-Fortran refactors of measured hotspots; H100 feasibility as a study); what is out: `ww3_multi`, coupling, PDLIB, WW4 contributions, physics changes (600) |
+| `05-justification.md` | `# JUSTIFICATION` | the case: operational value of faster cycles; upstream WW3 has no GPU path, the only published port got ~1.3× on Summit and was transfer-bound (`ikuyajolu2023`); WAM6-GPU shows what full residency gives (`yuan2024`); WW4 is pre-alpha, C++, first release hoped 2027 (`on525`, `ww4repo`) so the lab's WW3 stays operational for years; Kokkos as the portability layer if rung 4 goes ahead (`trott2022`); explicit non-overlap paragraph (1 100) |
+| `06-objective.md` | `# OBJECTIVE` | general objective + 5 specific, measurable objectives (reproducible benchmark; profile table; rung-by-rung speed-up with parity evidence; H100 feasibility memo; written recommendation to LabECO) (350) |
+| `07-methodology.md` | `# METHODOLOGY` | profiling-first method; parity gates (bit-for-bit for build-flag rungs, tolerance for refactors); regtests + the lab's operational case; tooling (`wwlab`: Nix toolchain, just recipes, submodules, CI); how results are recorded; risks (600) |
+| `08-schedule.md` | `# SCHEDULE` | intro sentence; markdown table (Stage, Deadline) with 8 rows Oct 2026 → Apr 2027, caption `Table: Undergraduate project schedule.`; then `# References {-}` + `::: {#refs}\n:::` (150 + table) |
 
-- [ ] **Step 6: Build PT with both styles and check length and layout**
+- [ ] **Step 6: Build EN with both styles and check length and layout**
 
 Run:
 ```bash
-just proposal pt && pdfinfo build/proposal_pt.pdf | grep Pages
-pdftotext -layout build/proposal_pt.pdf - | grep -nE 'PROPOSTA DE PROJETO|^ *1\. TÍTULO|Referências Bibliográficas|Rio de Janeiro, 13' 
-just proposal pt ieee && pdftotext build/proposal_pt.pdf - | grep -m1 '\[1\]'
+just proposal en && pdfinfo build/proposal_en.pdf | grep Pages
+pdftotext -layout build/proposal_en.pdf - | grep -nE 'UNDERGRADUATE PROJECT PROPOSAL|^ *1\. TITLE|References|Rio de Janeiro, September' 
+just proposal en ieee && pdftotext build/proposal_en.pdf - | grep -m1 '\[1\]'
 ```
 Expected: Pages between 8 and 12; the four layout markers found; IEEE build shows numeric `[1]` citations. If pages < 8, extend Justificativa/Metodologia; if > 12, trim.
 
@@ -573,19 +573,19 @@ Expected: Pages between 8 and 12; the four layout markers found; IEEE build show
 
 ```bash
 git add pubs/proposal pubs/csl
-git commit -m "feat(pubs): UFRJ/DEL proposal in Portuguese — WW3 forecast-time reduction for ReNOMO/LabECO
+git commit -m "feat(pubs): UFRJ/DEL proposal (English source) — WW3 forecast-time reduction for ReNOMO/LabECO
 
 CSL files from citation-style-language/styles (CC BY-SA 3.0).
 
-Tested: just proposal pt renders N pages with header, numbered sections, references and signature block; ieee style builds"
+Tested: just proposal en renders N pages with header, numbered sections, references and signature block; ieee style builds"
 ```
 
 ---
 
-### Task 4: Translation PT → EN
+### Task 4: Translation EN → PT-BR
 
 **Files:**
-- Create: `scripts/translate_md.py`, `tests/test_translate_md.py`, `pubs/proposal/en/*.md` (generated), `pubs/proposal/.translation-cache.json`
+- Create: `scripts/translate_md.py`, `tests/test_translate_md.py`, `pubs/proposal/pt/*.md` (generated), `pubs/proposal/.translation-cache.json`
 
 **Interfaces:**
 - Produces: `python3 scripts/translate_md.py [--force] [--dry-run]`; env `GITHUB_TOKEN` (default backend `https://models.github.ai/inference`, model `openai/gpt-4o-mini`), overrides `TRANSLATE_BASE_URL`, `TRANSLATE_MODEL`, `TRANSLATE_API_KEY`. Module functions `protect(text) -> (masked, table)` and `restore(masked, table) -> text` (used by the test), placeholder format `⟦N⟧`.
@@ -600,19 +600,19 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("translate_md", ROOT / "scripts" / "translate_md.py")
 tm = importlib.util.module_from_spec(spec); spec.loader.exec_module(tm)
 
-SAMPLE = """# TEMA
+SAMPLE = """# THEME
 
-Texto com `código`, fórmula $E = m c^2$ e bloco:
+Text with `code`, formula $E = m c^2$ and a block:
 
 ```bash
 just rt ww3_tp1.1
 ```
 
-Veja [o repositório](https://github.com/h0ffmann/ww-lab) e a citação [@ikuyajolu2023, p. 3].
+See [the repository](https://github.com/h0ffmann/ww-lab) and the citation [@ikuyajolu2023, p. 3].
 
 $$\\frac{\\partial N}{\\partial t} = S$$
 
-<!-- comentário -->
+<!-- comment -->
 """
 
 
@@ -623,9 +623,14 @@ class Protect(unittest.TestCase):
 
     def test_protected_content_is_hidden(self):
         masked, _ = tm.protect(SAMPLE)
-        for s in ("`código`", "$E = m c^2$", "just rt", "https://github.com", "@ikuyajolu2023", "\\frac", "comentário"):
+        for s in ("`code`", "$E = m c^2$", "just rt", "https://github.com", "@ikuyajolu2023", "\\frac", "comment", "# THEME"):
             self.assertNotIn(s, masked)
-        self.assertIn("Texto com", masked)
+        self.assertIn("Text with", masked)
+
+    def test_headings_localized(self):
+        self.assertEqual(tm.localize_headings(["# THEME", "# References {-}"]), ["# TEMA", "# Referências Bibliográficas {-}"])
+        with self.assertRaises(tm.PlaceholderError):
+            tm.localize_headings(["# SOMETHING ELSE"])
 
     def test_missing_placeholder_is_detected(self):
         masked, table = tm.protect(SAMPLE)
@@ -644,9 +649,9 @@ if __name__ == "__main__":
 
 ```python
 #!/usr/bin/env python3
-"""translate_md — PT-BR -> EN-US for pubs/proposal, markdown-aware, hash-cached.
+"""translate_md — EN-US -> PT-BR for pubs/proposal, markdown-aware, hash-cached.
 
-    python3 scripts/translate_md.py            # translate files whose PT hash changed
+    python3 scripts/translate_md.py            # translate files whose EN hash changed
     python3 scripts/translate_md.py --force    # everything
     python3 scripts/translate_md.py --dry-run  # list what would run, no API calls
 
@@ -667,10 +672,15 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PT_DIR = ROOT / "pubs" / "proposal" / "pt"
-EN_DIR = ROOT / "pubs" / "proposal" / "en"
+SRC_DIR = ROOT / "pubs" / "proposal" / "en"
+OUT_DIR = ROOT / "pubs" / "proposal" / "pt"
 CACHE = ROOT / "pubs" / "proposal" / ".translation-cache.json"
-HEADER = "<!-- generated by scripts/translate_md.py from ../pt/{name} — edit the Portuguese, not this file -->\n"
+HEADER = "<!-- generated by scripts/translate_md.py from ../en/{name} — edit the English, not this file -->\n"
+HEADINGS = {  # fixed glossary: the DEL section names
+    "TITLE": "TÍTULO", "EMPHASIS": "ÊNFASE", "THEME": "TEMA", "SCOPE": "DELIMITAÇÃO",
+    "JUSTIFICATION": "JUSTIFICATIVA", "OBJECTIVE": "OBJETIVO", "METHODOLOGY": "METODOLOGIA",
+    "SCHEDULE": "CRONOGRAMA", "References": "Referências Bibliográficas",
+}
 
 PATTERNS = [
     re.compile(r"```.*?```", re.S),            # fenced code
@@ -680,12 +690,14 @@ PATTERNS = [
     re.compile(r"`[^`\n]+`"),                  # inline code
     re.compile(r"\]\([^)]*\)"),                # link / image targets
     re.compile(r"\[-?@[^\]]+\]|(?<![\w@])@[A-Za-z0-9_:-]+"),  # citations
+    re.compile(r"^# .+$", re.M),               # section headings: mapped by the glossary, not the model
+    re.compile(r"^Table:", re.M),              # pandoc caption keyword
 ]
 PH = "⟦{}⟧"
 PH_RE = re.compile(r"⟦(\d+)⟧")
 
 SYSTEM = """You are an academic translator (engineering / computer science). Translate the markdown
-from Brazilian Portuguese to American English. Rules: translate prose, headings, table cells
+from American English to Brazilian Portuguese. Rules: translate prose, headings, table cells
 and list items only; keep every ⟦N⟧ placeholder exactly as is and in place; keep markdown
 structure (headings, lists, tables, emphasis) unchanged; do not add or remove paragraphs;
 output only the translated markdown, no preamble."""
@@ -705,6 +717,18 @@ def protect(text: str) -> tuple[str, list[str]]:
     for pat in PATTERNS:
         text = pat.sub(stash, text)
     return text, table
+
+
+def localize_headings(table: list[str]) -> list[str]:
+    out = []
+    for item in table:
+        m = re.match(r"^# (.+?)( \{[^}]*\})?$", item)
+        if m and m.group(1) in HEADINGS:
+            item = f"# {HEADINGS[m.group(1)]}{m.group(2) or ''}"
+        elif m:
+            raise PlaceholderError(f"heading not in the DEL glossary: {item}")
+        out.append(item)
+    return out
 
 
 def restore(masked: str, table: list[str]) -> str:
@@ -749,9 +773,9 @@ def main() -> int:
     a = ap.parse_args()
     cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
     todo = []
-    for pt in sorted(PT_DIR.glob("[0-9][0-9]-*.md")):
+    for pt in sorted(SRC_DIR.glob("[0-9][0-9]-*.md")):
         h = sha(pt.read_text(encoding="utf-8"))
-        en = EN_DIR / pt.name
+        en = OUT_DIR / pt.name
         if a.force or cache.get(pt.name) != h or not en.exists():
             todo.append((pt, h))
     if not todo:
@@ -762,18 +786,18 @@ def main() -> int:
     if a.dry_run:
         return 0
     cl, model = client()
-    EN_DIR.mkdir(parents=True, exist_ok=True)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     rc = 0
     for pt, h in todo:
         src = pt.read_text(encoding="utf-8")
         masked, table = protect(src)
         try:
-            out = restore(translate_text(cl, model, masked), table)
+            out = restore(translate_text(cl, model, masked), localize_headings(table))
         except PlaceholderError as e:
-            print(f"translate_md: {pt.name}: {e} — EN copy left untouched", file=sys.stderr)
+            print(f"translate_md: {pt.name}: {e} — PT copy left untouched", file=sys.stderr)
             rc = 1
             continue
-        (EN_DIR / pt.name).write_text(HEADER.format(name=pt.name) + out, encoding="utf-8")
+        (OUT_DIR / pt.name).write_text(HEADER.format(name=pt.name) + out, encoding="utf-8")
         cache[pt.name] = h
         CACHE.write_text(json.dumps(cache, indent=2, sort_keys=True) + "\n")
     return rc
@@ -783,20 +807,20 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-- [ ] **Step 4: Run the tests, expect pass** — `python3 -m unittest tests/test_translate_md.py -v` → 3 OK.
+- [ ] **Step 4: Run the tests, expect pass** — `python3 -m unittest tests/test_translate_md.py -v` → 4 OK.
 
-- [ ] **Step 5: Generate EN and build it**
+- [ ] **Step 5: Generate PT and build it**
 
-Run: `just translate --dry-run` (lists 8 files), then `GITHUB_TOKEN="$(gh auth token)" just translate` — if GitHub Models rejects the token, fall back to `TRANSLATE_BASE_URL=http://127.0.0.1:11434/v1 TRANSLATE_MODEL=dolphin-mixtral:8x7b TRANSLATE_API_KEY=ollama just translate`. Then `just proposal en && pdfinfo build/proposal_en.pdf | grep Pages`.
-Expected: 8 EN files with the generated header; EN PDF within 8–12 pages; `just translate` again prints "everything up to date".
+Run: `just translate --dry-run` (lists 8 files), then `GITHUB_TOKEN="$(gh auth token)" just translate` — if GitHub Models rejects the token, fall back to `TRANSLATE_BASE_URL=http://127.0.0.1:11434/v1 TRANSLATE_MODEL=dolphin-mixtral:8x7b TRANSLATE_API_KEY=ollama just translate`. Then `just proposal pt && pdfinfo build/proposal_pt.pdf | grep Pages`.
+Expected: 8 PT files with the generated header and the DEL headings; PT PDF within 8–12 pages; `just translate` again prints "everything up to date".
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add scripts/translate_md.py tests/test_translate_md.py pubs/proposal/en pubs/proposal/.translation-cache.json
-git commit -m "feat(pubs): PT->EN markdown translator; generated English proposal
+git add scripts/translate_md.py tests/test_translate_md.py pubs/proposal/pt pubs/proposal/.translation-cache.json
+git commit -m "feat(pubs): EN->PT markdown translator; generated Portuguese proposal
 
-Tested: unittest tests/test_translate_md.py (3 pass); just translate produced 8 files via <backend>; just proposal en renders N pages; second run is a no-op"
+Tested: unittest tests/test_translate_md.py (3 pass); just translate produced 8 files via <backend>; just proposal pt renders N pages; second run is a no-op"
 ```
 
 ---
@@ -890,7 +914,7 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@v9
       - name: unit tests
         run: nix develop . --command python3 -m unittest discover -s tests -v
-      - name: translate PT -> EN (main only)
+      - name: translate EN -> PT (main only)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env: { GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
         run: nix develop . --command python3 scripts/translate_md.py
@@ -903,12 +927,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f pdf/*.pdf pubs/proposal/en pubs/proposal/.translation-cache.json
+          git add -f pdf/*.pdf pubs/proposal/pt pubs/proposal/.translation-cache.json
           git diff --staged --quiet || git commit -m "ci: rebuild PDFs [skip ci]"
           git push
 ```
 
-- [ ] **Step 2: README** — add `| \`pubs/\` | Course book and UFRJ/DEL proposal sources; \`just book\`, \`just proposal pt|en [abnt|ieee]\`, \`just translate\`; PDFs in \`pdf/\` |` to the table and a short "Publications" section listing the four recipes, the flake (`nix build .`), the PT-is-source rule, and the style option.
+- [ ] **Step 2: README** — add `| \`pubs/\` | Course book and UFRJ/DEL proposal sources; \`just book\`, \`just proposal pt|en [abnt|ieee]\`, \`just translate\`; PDFs in \`pdf/\` |` to the table and a short "Publications" section listing the four recipes, the flake (`nix build .`), the EN-is-source rule, and the style option.
 
 - [ ] **Step 3: Open the PR**
 
