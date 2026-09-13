@@ -133,7 +133,7 @@ names as repository secrets, otherwise the step is skipped and the committed `pt
 **WAVEWATCH IV™ (WW4) exists, and WW3 is scheduled for sunset.** [NOAA-EMC/WW4](https://github.com/NOAA-EMC/WW4)
 is a ground-up rewrite — new repository, no backward compatibility, C++ core with Rust
 alongside, Fortran demoted to a solver-only language. As of 2026-09-11 it had 36 commits
-and no releases: pre-alpha. First public release is hoped for summer 2027. The plan,
+and no releases: pre-alpha. **First public release is hoped for summer 2027 [align with Pedro]**. The plan,
 including the commitment to sunset WW3 support once WW4 matures, is in
 [NCEP Office Note 525](https://doi.org/10.25923/h7j3-1h25). Learn WW3 anyway — the physics
 is identical and the concepts transfer completely; only the interfaces won't. Details in
