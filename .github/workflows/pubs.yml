@@ -1,5 +1,6 @@
-# pubs — build every PDF with nix flake check; upload as artifacts; on main, also translate the
-# proposal (when TRANSLATE_* secrets are set) and commit pdf/ + pubs/proposal/pt back.
+# pubs — build every PDF with nix-config's labs/publisher action: unit tests and (on main, when
+# TRANSLATE_* secrets exist) the EN -> PT translation as pre-build, then nix flake check,
+# nix build, artifact upload, and on main a commit of pdf/ + pubs/proposal/pt back.
 name: Publications
 
 on:
@@ -20,28 +21,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: DeterminateSystems/nix-installer-action@v16
-      - uses: DeterminateSystems/magic-nix-cache-action@v9
-      - name: unit tests
-        run: nix develop . --command python3 -m unittest discover -s tests -v
-      - name: translate EN -> PT (main only, needs TRANSLATE_BASE_URL / TRANSLATE_API_KEY / TRANSLATE_MODEL secrets)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      - uses: h0ffmann/nix-config/labs/publisher@main
         env:
           TRANSLATE_BASE_URL: ${{ secrets.TRANSLATE_BASE_URL }}
           TRANSLATE_API_KEY: ${{ secrets.TRANSLATE_API_KEY }}
           TRANSLATE_MODEL: ${{ secrets.TRANSLATE_MODEL }}
-        run: |
-          if [ -z "$TRANSLATE_API_KEY" ]; then echo "no TRANSLATE_API_KEY secret — skipping translation, pt/ stays as committed"; exit 0; fi
-          nix develop . --command python3 scripts/translate_md.py
-      - name: build all PDFs (nix flake check)
-        run: nix flake check --print-build-logs && nix build . && mkdir -p pdf && cp -L result/*.pdf pdf/
-      - uses: actions/upload-artifact@v4
-        with: { name: 'pubs-pdfs-${{ github.sha }}', path: 'pdf/*.pdf', retention-days: 30 }
-      - name: commit pdf/ and pt/ (main only)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f pdf/*.pdf pubs/proposal/pt pubs/proposal/.translation-cache.json
-          git diff --staged --quiet || git commit -m "ci: rebuild PDFs [skip ci]"
-          git push
+        with:
+          pre-build: |
+            set -euo pipefail
+            nix develop . --command python3 -m unittest discover -s tests -v
+            if [ "$GITHUB_REF" = refs/heads/main ] && [ "$GITHUB_EVENT_NAME" = push ]; then
+              if [ -n "${TRANSLATE_API_KEY:-}" ]; then nix develop . --command python3 scripts/translate_md.py
+              else echo "no TRANSLATE_API_KEY secret — skipping translation, pt/ stays as committed"; fi
+            fi
+          commit: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+          commit-paths: pubs/proposal/pt pubs/proposal/.translation-cache.json
