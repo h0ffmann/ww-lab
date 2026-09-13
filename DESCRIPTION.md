@@ -1,0 +1,1 @@
+Open-source lab for the WAVEWATCH III wave model: a 12-lesson course, runnable examples, a pinned Nix toolchain (gfortran, OpenMPI, NetCDF) with one-command regression tests, GPU benchmarks on an RTX 4090, and a reproducible markdown-to-PDF pipeline that builds the course book and a research proposal in CI.
