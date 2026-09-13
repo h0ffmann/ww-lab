@@ -2,10 +2,13 @@
 # Clone WW3 and pull the binary data bundle needed by the regression tests.
 #
 # usage: 01_get_ww3.sh [dest]   (default: $HOME/src/WW3)
+#   WW3_BRANCH=<name>  branch to clone (default develop)
+#   WW3_DATA=0         skip the NOAA FTP data bundle (ww3_tp1.x / ww3_tp2.2 do not need it)
 set -euo pipefail
 
 DEST="${1:-$HOME/src/WW3}"
 BRANCH="${WW3_BRANCH:-develop}"
+DATA="${WW3_DATA:-1}"
 
 if [ -d "$DEST/.git" ]; then
   echo ">> $DEST already a git repo; fetching."
@@ -17,6 +20,13 @@ else
 fi
 
 cd "$DEST"
+
+if [ "$DATA" = "0" ]; then
+  echo
+  echo ">> WW3_DATA=0: skipping the NOAA FTP data bundle (needed only by regtests with netCDF inputs)."
+  echo ">> Done.  export WW3=$DEST"
+  exit 0
+fi
 
 # The repo is only half the package. The other half is a binary data bundle
 # (bathymetry, forcing, reference output for the regression tests) that lives

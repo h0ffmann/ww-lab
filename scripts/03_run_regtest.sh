@@ -23,8 +23,9 @@ cp "$BIN"/ww3_* . 2>/dev/null || true
 run () {
   local prog="$1"
   if [ ! -x "./$prog" ]; then echo "-- skip $prog (not built)"; return 0; fi
-  # only run it if it actually has an input file present
-  if ls "${prog}".{nml,inp} >/dev/null 2>&1; then
+  # only run it if it actually has an input file present (.nml or .inp -- most tests ship
+  # both, but e.g. ww3_strt often has only the .inp, and `ls a b` fails if either is missing)
+  if [ -e "${prog}.nml" ] || [ -e "${prog}.inp" ]; then
     echo; echo "=== $prog ==============================================="
     "./$prog" 2>&1 | tee "${prog}.out"
   else
