@@ -147,3 +147,26 @@ src-st:
     @git -C WW3 fetch --quiet origin develop && git -C WW3 fetch --quiet upstream develop
     @echo "pinned: $(git -C WW3 rev-parse --short HEAD)  fork/develop: $(git -C WW3 rev-parse --short origin/develop)  upstream/develop: $(git -C WW3 rev-parse --short upstream/develop)"
     @echo "fork is $(git -C WW3 rev-list --count origin/develop..upstream/develop) commits behind upstream"
+
+# ---------------------------------------------------------------------
+# Publications: markdown -> PDF (flake.nix at the repo root; sources in pubs/)
+# ---------------------------------------------------------------------
+
+# Enter the publications shell (pandoc, xelatex, python+openai).
+pubs-shell:
+    nix develop "{{justfile_directory()}}"
+
+# Course book PDF from course/*.md -> build/ww3-lab-course.pdf.
+book style="abnt":
+    nix develop "{{justfile_directory()}}" --command scripts/build_pdf.sh book {{style}}
+
+# Proposal PDF -> build/proposal_<lang>.pdf; lang pt|en, style abnt (default) or ieee.
+proposal lang="pt" style="abnt":
+    nix develop "{{justfile_directory()}}" --command scripts/build_pdf.sh proposal {{lang}} {{style}}
+
+# Translate pubs/proposal/en -> pt (changed files only; --force, --dry-run).
+translate *args:
+    nix develop "{{justfile_directory()}}" --command python3 scripts/translate_md.py "$@"
+
+# Everything: book + proposal pt + proposal en (same as `nix build .`).
+pubs: book (proposal "pt") (proposal "en")
