@@ -10,7 +10,6 @@ drive it from Python, then poke at the GPU question.
 
 | Path | What it is |
 |---|---|
-| `docs/AWESOME-WW3_202609.md` | Curated, annotated link list: source, docs, courses, tooling, papers, data, other models |
 | `course/` | 12 lessons, in order, from "what is a wave spectrum" through GPUs, WAVEWATCH IV, and SWAN |
 | `examples/` | Self-contained runnable cases with real `.nml` input files |
 | `exercises/` | `pyww3` exercises (with solutions) — drive WW3 from Python |
@@ -19,34 +18,33 @@ drive it from Python, then poke at the GPU question.
 | `scripts/` | Get, build, and run WW3 (and SWAN); stage upstream regression tests |
 | `switches/` | Annotated switch files (WW3's compile-time feature selection) |
 | `env/` | conda environment + Dockerfile |
-| `docs/` | Planning docs: [`AGENTS_KOKKOS_202609.md`](docs/AGENTS_KOKKOS_202609.md) (agent rules for a phased WW3 → Kokkos port), [`KOKKOS_H100_PLAN_202609.md`](docs/KOKKOS_H100_PLAN_202609.md) (single-H100 port plan: repo map, translation coverage, comparable ports) |
+| `docs/` | [`AWESOME-WW3_202609.md`](docs/AWESOME-WW3_202609.md), a curated link list; [`AGENTS_KOKKOS_202609.md`](docs/AGENTS_KOKKOS_202609.md), agent rules for a phased WW3 → Kokkos port; [`KOKKOS_H100_PLAN_202609.md`](docs/KOKKOS_H100_PLAN_202609.md), the single-H100 port plan |
 | `nix-config/` | Git submodule (sparse: only `labs/pratico`) — the pinned Nix toolchain WW3 is built with |
+| `WW3/` | Git submodule — the [h0ffmann/WW3](https://github.com/h0ffmann/WW3) fork of NOAA-EMC/WW3, with upstream as a second remote |
+| `justfile` | Every task in this repo: `just` lists them |
 
 ## Quickstart
 
+Needs [Nix](https://nixos.org) and [just](https://github.com/casey/just); the compilers come
+from the pinned flake (next section), nothing else to install.
+
 ```bash
-# 0. host prerequisites (Debian/Ubuntu)
-bash scripts/00_prereqs.sh
-
-# 1. clone WW3 + fetch the binary test-data bundle from NOAA's FTP
-bash scripts/01_get_ww3.sh ~/src/WW3
-
-# 2. build with CMake using one of the lab switch files
-bash scripts/02_build_ww3.sh ~/src/WW3 switches/switch_lab_shrd
-
-# 3. smoke test against an upstream regression test
-bash scripts/03_run_regtest.sh ~/src/WW3 ww3_tp2.2
-
-# 4. run the first course example (fetch-limited growth, ~1 min)
-cd examples/01-fetch-limited-growth && ./run.sh
+git clone --recurse-submodules git@github.com:h0ffmann/ww-lab.git && cd ww-lab
+just submodule-init   # sparse-checkout nix-config (once per clone)
+just get              # clone upstream NOAA-EMC/WW3 develop into ~/src/WW3
+just rt               # build with ww3_tp1.1's own switch and run that regtest (~30 s)
+just build            # rebuild with the lab switch (switches/switch_lab_shrd, ST4 physics)
+just example01        # first course example: fetch-limited growth (~1 min)
 ```
 
-Then start at [`course/00-orientation.md`](course/00-orientation.md).
+Then start at [`course/00-orientation.md`](course/00-orientation.md). Every recipe is a thin
+wrapper over a script in `scripts/`; run those directly if you prefer a host toolchain
+(`just prereqs` installs it on Debian/Ubuntu).
 
 Optionally, get SWAN too — it's the right tool for the coastal cases WW3 is wrong for:
 
 ```bash
-bash scripts/04_get_swan.sh ~/src/swan
+just swan             # clone and build into ~/src/swan
 ```
 
 ## Nix toolchain (reproducible gfortran / OpenMPI / NetCDF)
@@ -77,9 +75,6 @@ just regtest [test]      # rerun a test step by step against the current build (
 `ww3_tp1.x` and `ww3_tp2.2` need no FTP data. Output lands in `<ww3>/regtests/<test>/work_lab/`;
 for `ww3_tp1.1` the gridded `ww3.196806.nc` should show `hs` starting at 2.5 m on the equator row.
 
-Fresh clone: `git clone --recurse-submodules …` then `just submodule-init` (the sparse
-checkout is local state, so it has to be set once per clone; the recipe is idempotent).
-
 What `just toolchain` prints today (`(v)` — this is the exact output on the lab machine):
 
 ```
@@ -100,6 +95,10 @@ python       Python 3.14.7 numpy 2.5.1 xarray 2026.7.0
 
 The `warning: Git tree '…/nix-config' has uncommitted changes` line Nix prints is the
 sparse checkout, not real edits; `git -C nix-config status` is clean.
+
+The `WW3/` submodule is your fork, kept in step with upstream by `just src-sync`
+(`just src-st` shows pinned vs. fork vs. upstream). Pass `WW3` as the last argument of
+`build`, `regtest` or `rt` to build the fork instead of `~/src/WW3`.
 
 ## Two things worth knowing before you invest
 
@@ -125,7 +124,7 @@ haven't caught up with. See [`course/11-swan.md`](course/11-swan.md).
 OpenMP target offload, and `do concurrent` offload (`-stdpar=gpu`). Your 4090 is Ada,
 compute capability 8.9, so `-gpu=cc89`.
 
-**But WW3 itself has no GPU support upstream**, and it never will — The only published port
+**But WW3 itself has no GPU support upstream**, and it never will — the only published port
 ([Ikuyajolu et al., GMD 2023](https://gmd.copernicus.org/articles/16/1445/2023/))
 OpenACC-ified one module (`W3SRCEMD`, the source-term integration) and got roughly
 **1.3× against 42 CPU cores** on Summit's V100s — data-transfer bound, and not merged
@@ -147,11 +146,10 @@ realistic experiment plan in [`course/09-gpu-and-performance.md`](course/09-gpu-
 
 ## Repo layout notes
 
-- `make help` lists the convenience targets; `just` lists the Nix/submodule recipes.
+- `just` lists every task; `justfile` is the entry point, `scripts/` holds the logic.
 - CI (`.github/workflows/ci.yml`) checks Python and shell syntax, compiles the Fortran
   sandbox with gfortran, and link-checks the markdown. It does not build WW3 — that needs
   the NOAA FTP data bundle and takes too long for a free runner.
-- Before pushing: edit `LICENSE` to replace `<YOUR NAME>`.
 
 ## Licensing
 
