@@ -1,43 +1,29 @@
-# ww3-lab -- just recipes. Everything real lives in scripts/.
-# Run `just` for the list. Make targets in Makefile are unchanged.
+# ww3-lab -- task runner. Everything real lives in scripts/. Run `just` for the list.
+#
+# Source trees: <ww3> defaults to $WW3, else ~/src/WW3 (upstream NOAA-EMC clone from
+# `just get`); pass `WW3` to use the fork submodule instead. SWAN defaults to ~/src/swan.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 set positional-arguments
 
-setup_script     := "scripts/ww-lab-tool-setup.sh"
-submodule_path   := "nix-config"
+ww3_src  := env_var_or_default("WW3",   env_var("HOME") + "/src/WW3")
+swan_src := env_var_or_default("SWAN",  env_var("HOME") + "/src/swan")
+pratico  := justfile_directory() + "/nix-config/labs/pratico"
 
 default:
     @just --list --unsorted
 
-# Shorthand: `just up` == `just submodule-update`.
-alias up := submodule-update
-alias st := submodule-status
-
-# Materialise nix-config (sparse: only labs/pratico). Safe after a fresh clone.
-submodule-init:
-    bash {{setup_script}} .
-
-# Move the nix-config pin to the latest origin/<branch> and stage it.
-submodule-update branch="main":
-    bash {{setup_script}} . --bump --branch {{branch}}
-
-# Same as submodule-update, but also commit .gitmodules + the new pin.
-submodule-commit branch="main":
-    bash {{setup_script}} . --bump --branch {{branch}} --commit
-
-# Show the pinned commit vs. the branch tip.
-submodule-status:
-    @git submodule status -- {{submodule_path}}
-    @git -C {{submodule_path}} fetch --quiet --depth 1 origin "$(git config -f .gitmodules submodule.{{submodule_path}}.branch)"
-    @echo "tip: $(git -C {{submodule_path}} rev-parse --short FETCH_HEAD)  pinned: $(git -C {{submodule_path}} rev-parse --short HEAD)"
-    @echo "checked out: $(git -C {{submodule_path}} sparse-checkout list | tr '\n' ' ')"
-
 # ---------------------------------------------------------------------
-# WW3 toolchain from nix-config/labs/pratico (gfortran, OpenMPI, NetCDF, ...).
+# Host toolchain (Debian/Ubuntu) -- alternative to the Nix shell below
 # ---------------------------------------------------------------------
 
-pratico := "./" + submodule_path + "/labs/pratico"
+# Install build dependencies with apt (gfortran, OpenMPI, NetCDF, CMake, ...).
+prereqs:
+    bash scripts/00_prereqs.sh
+
+# ---------------------------------------------------------------------
+# Nix toolchain from nix-config/labs/pratico (gfortran, OpenMPI, NetCDF, ...)
+# ---------------------------------------------------------------------
 
 # Enter the toolchain-only shell (`nix develop .#ww3` in pratico).
 ww3:
@@ -56,11 +42,76 @@ smoke:
     just -f {{pratico}}/justfile smoke
 
 # ---------------------------------------------------------------------
-# WW3 source as a submodule (./WW3) from the fork h0ffmann/WW3, tracking
-# NOAA-EMC/WW3 develop as remote "upstream". scripts/ww3-submodule.sh.
+# WW3: get, build, regtest, examples, bench
 # ---------------------------------------------------------------------
 
-src_script := "scripts/ww3-submodule.sh"
+# Clone upstream NOAA-EMC/WW3 develop into <ww3>. No FTP bundle unless WW3_DATA=1.
+get ww3=ww3_src:
+    WW3_DATA="${WW3_DATA:-0}" bash scripts/01_get_ww3.sh "{{ww3}}"
+
+# Full rebuild of <ww3> with <switch> (a path, or a name resolved in <ww3>/model/bin).
+build switch="switches/switch_lab_shrd" ww3=ww3_src:
+    nix develop "{{pratico}}#ww3" --command bash scripts/02_build_ww3.sh "{{ww3}}" "{{switch}}"
+
+# Run one upstream regtest step by step (grid, strt, shel, ounf, ounp) in <ww3>/regtests/<test>/work_lab.
+regtest test="ww3_tp1.1" ww3=ww3_src:
+    nix develop "{{pratico}}#ww3" --command bash scripts/03_run_regtest.sh "{{ww3}}" "{{test}}"
+
+# The simple regtest: build with the test's own switch_<sw>, then run it.
+rt test="ww3_tp1.1" sw="PR3_UQ" ww3=ww3_src: (build (ww3 + "/regtests/" + test + "/input/switch_" + sw) ww3) (regtest test ww3)
+
+# Run the first course example (fetch-limited growth, ~1 min) against <ww3>'s build.
+example01 ww3=ww3_src:
+    cd examples/01-fetch-limited-growth && WW3="{{ww3}}" nix develop "{{pratico}}#ww3" --command bash run.sh
+
+# i9 vs 4090 benchmarks (kernel + real WW3 MPI scaling) against <ww3>'s build.
+bench ww3=ww3_src:
+    bash bench/run_all.sh "{{ww3}}/build"
+
+# Build the GPU sandbox (needs nvfortran; `just gpu CC_ARCH=cc90` for an H100).
+gpu *args:
+    make -C gpu "$@"
+
+# Clone and build SWAN (TU Delft GitLab) into <swan>.
+swan swan=swan_src:
+    bash scripts/04_get_swan.sh "{{swan}}"
+
+# Delete run artefacts (bench, gpu binaries, example outputs); keep configs.
+clean-runs:
+    make -C bench clean
+    rm -rf exercises/runs gpu/00_hello_acc gpu/01_dispersion gpu/02_do_concurrent gpu/03_precision
+    find examples -name '*.nc' -delete
+    find examples -name '*.ww3' -delete
+    find examples -name '*.out' -delete
+
+# ---------------------------------------------------------------------
+# Submodules: nix-config (sparse, labs/pratico) and WW3 (fork of NOAA-EMC/WW3)
+# ---------------------------------------------------------------------
+
+setup_script := "scripts/ww-lab-tool-setup.sh"
+src_script   := "scripts/ww3-submodule.sh"
+
+# Materialise nix-config (sparse: only labs/pratico). Safe after a fresh clone.
+submodule-init:
+    bash {{setup_script}} .
+
+# Move the nix-config pin to the latest origin/<branch> and stage it.
+submodule-update branch="main":
+    bash {{setup_script}} . --bump --branch {{branch}}
+
+# Same as submodule-update, but also commit .gitmodules + the new pin.
+submodule-commit branch="main":
+    bash {{setup_script}} . --bump --branch {{branch}} --commit
+
+# Show the nix-config pinned commit vs. the branch tip.
+submodule-status:
+    @git submodule status -- nix-config
+    @git -C nix-config fetch --quiet --depth 1 origin "$(git config -f .gitmodules submodule.nix-config.branch)"
+    @echo "tip: $(git -C nix-config rev-parse --short FETCH_HEAD)  pinned: $(git -C nix-config rev-parse --short HEAD)"
+    @echo "checked out: $(git -C nix-config sparse-checkout list | tr '\n' ' ')"
+
+alias up := submodule-update
+alias st := submodule-status
 
 # Add the WW3 fork as ./WW3, or initialise it after a fresh clone.
 src-init:
@@ -78,32 +129,9 @@ src-sync branch="develop":
 src-pr n:
     bash {{src_script}} . --pr {{n}}
 
-# Pinned commit vs. fork and upstream tips.
+# WW3 pinned commit vs. fork and upstream tips.
 src-st:
     @git submodule status -- WW3
     @git -C WW3 fetch --quiet origin develop && git -C WW3 fetch --quiet upstream develop
     @echo "pinned: $(git -C WW3 rev-parse --short HEAD)  fork/develop: $(git -C WW3 rev-parse --short origin/develop)  upstream/develop: $(git -C WW3 rev-parse --short upstream/develop)"
     @echo "fork is $(git -C WW3 rev-list --count origin/develop..upstream/develop) commits behind upstream"
-
-# ---------------------------------------------------------------------
-# Build and regtest WW3 inside the Nix toolchain. <ww3> is the source
-# tree: $WW3, else ~/src/WW3 (the upstream NOAA-EMC clone from `just get`,
-# not the fork). Pass `WW3` to use the fork submodule:  just rt ww3_tp1.1 PR3_UQ WW3
-# ---------------------------------------------------------------------
-
-ww3_src := env_var_or_default("WW3", env_var("HOME") + "/src/WW3")
-
-# Clone upstream NOAA-EMC/WW3 develop into <ww3>. No FTP bundle unless WW3_DATA=1.
-get ww3=ww3_src:
-    WW3_DATA="${WW3_DATA:-0}" bash scripts/01_get_ww3.sh "{{ww3}}"
-
-# Full rebuild of <ww3> with <switch> (a path, or a name resolved in <ww3>/model/bin).
-build switch="switches/switch_lab_shrd" ww3=ww3_src:
-    nix develop "{{pratico}}#ww3" --command bash scripts/02_build_ww3.sh "{{ww3}}" "{{switch}}"
-
-# Run one upstream regtest step by step (grid, strt, shel, ounf, ounp) in <ww3>/regtests/<test>/work_lab.
-regtest test="ww3_tp1.1" ww3=ww3_src:
-    nix develop "{{pratico}}#ww3" --command bash scripts/03_run_regtest.sh "{{ww3}}" "{{test}}"
-
-# The simple regtest: build with the test's own switch_<sw>, then run it.
-rt test="ww3_tp1.1" sw="PR3_UQ" ww3=ww3_src: (build (ww3 + "/regtests/" + test + "/input/switch_" + sw) ww3) (regtest test ww3)
