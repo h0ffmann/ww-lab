@@ -3,3 +3,7 @@
 	url = git@github.com:h0ffmann/nix-config.git
 	branch = main
 	shallow = true
+[submodule "WW3"]
+	path = WW3
+	url = git@github.com:h0ffmann/WW3.git
+	branch = develop
