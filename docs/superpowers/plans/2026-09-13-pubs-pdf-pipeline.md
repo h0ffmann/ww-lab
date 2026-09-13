@@ -55,7 +55,7 @@ README.md                                  + Publications section (Task 6)
 **Interfaces:**
 - Produces: `scripts/build_pdf.sh <book|proposal> [pt|en] [abnt|ieee]` → writes `build/<name>.pdf`, exit non-zero on any pandoc/xelatex failure. Env `OUT_DIR` overrides `build/`. `nix develop .` shell with `pandoc`, `xelatex`, `python3` (+openai), `just`, `pdftotext`, `pdfinfo`.
 
-- [ ] **Step 1: Write `flake.nix` (devShell only; packages come in Task 5)**
+- [x] **Step 1: Write `flake.nix` (devShell only; packages come in Task 5)**
 
 ```nix
 {
@@ -93,7 +93,7 @@ README.md                                  + Publications section (Task 6)
 }
 ```
 
-- [ ] **Step 2: Write `scripts/build_pdf.sh`**
+- [x] **Step 2: Write `scripts/build_pdf.sh`**
 
 ```bash
 #!/usr/bin/env bash
@@ -148,7 +148,7 @@ else
 fi
 ```
 
-- [ ] **Step 3: Append `build/` to `.gitignore`; add just recipes**
+- [x] **Step 3: Append `build/` to `.gitignore`; add just recipes**
 
 ```make
 # ---------------------------------------------------------------------
@@ -175,16 +175,16 @@ translate *args:
 pubs: book (proposal "pt") (proposal "en")
 ```
 
-- [ ] **Step 4: Verify the shell**
+- [x] **Step 4: Verify the shell**
 
 Run: `nix develop . --command bash -c 'pandoc --version | head -1; xelatex --version | head -1; python3 -c "import openai; print(openai.__version__)"; kpsewhich DejaVuSerif.ttf'`
 Expected: pandoc 3.7.0.2, XeTeX 3.14…, an openai version, and a path ending in `dejavu/DejaVuSerif.ttf`.
 
-- [ ] **Step 5: Verify `build_pdf.sh` argument checking**
+- [x] **Step 5: Verify `build_pdf.sh` argument checking**
 
 Run: `scripts/build_pdf.sh nope; echo rc=$?` → usage text, rc=2. `scripts/build_pdf.sh proposal fr; echo rc=$?` → rc=2.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add flake.nix flake.lock scripts/build_pdf.sh .gitignore justfile
@@ -204,7 +204,7 @@ Tested: nix develop . shows pandoc 3.7.0.2 and xelatex; kpsewhich finds DejaVuSe
 - Consumes: `scripts/build_pdf.sh book` (Task 1) calls `python3 scripts/book_prep.py <course_dir> <out_dir>`.
 - Produces: `book_prep.py` writes `<out_dir>/NN-slug.md` for every `NN-*.md` in `<course_dir>` (README.md skipped): first `# ` heading gets `{#ch-<slug>}`; links `](NN-slug.md)` → `](#ch-slug)`, `](NN-slug.md#a)` → `](#a)`. Exit 1 if a link targets a file that does not exist in `<course_dir>`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_book_prep.py
@@ -245,12 +245,12 @@ if __name__ == "__main__":
     unittest.main()
 ```
 
-- [ ] **Step 2: Run it, expect failure**
+- [x] **Step 2: Run it, expect failure**
 
 Run: `python3 -m unittest tests/test_book_prep.py -v`
 Expected: FAIL / error (script missing).
 
-- [ ] **Step 3: Write `scripts/book_prep.py`**
+- [x] **Step 3: Write `scripts/book_prep.py`**
 
 ```python
 #!/usr/bin/env python3
@@ -306,11 +306,11 @@ if __name__ == "__main__":
     sys.exit(prep(pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])))
 ```
 
-- [ ] **Step 4: Run the test, expect pass**
+- [x] **Step 4: Run the test, expect pass**
 
 Run: `python3 -m unittest tests/test_book_prep.py -v` → 2 tests OK.
 
-- [ ] **Step 5: Write `pubs/book/defaults.yaml` and `pubs/book/template.tex`**
+- [x] **Step 5: Write `pubs/book/defaults.yaml` and `pubs/book/template.tex`**
 
 ```yaml
 # pubs/book/defaults.yaml — pandoc defaults for the course book
@@ -371,12 +371,12 @@ $body$
 \end{document}
 ```
 
-- [ ] **Step 6: Build and smoke-test**
+- [x] **Step 6: Build and smoke-test**
 
 Run: `just book && pdfinfo build/ww3-lab-course.pdf | grep Pages && pdftotext build/ww3-lab-course.pdf - | grep -cE '⚠|\(v\)' && pdftotext build/ww3-lab-course.pdf - | grep -m1 -E 'partial N|∂'`
 Expected: a page count > 40, marker count > 0, and the action-balance equation text present. If pandoc reports an unsupported glyph or a warning, fix the template (add the glyph's font via `\newfontfamily`) or the defaults — never edit `course/`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add scripts/book_prep.py tests/test_book_prep.py pubs/book
@@ -396,7 +396,7 @@ Tested: unittest tests/test_book_prep.py (2 pass); just book renders N pages, �
 - Consumes: `scripts/build_pdf.sh proposal en [style]` (Task 1).
 - Produces: metadata keys read by the template: `university`, `school`, `department`, `doc_kind`, `student`, `email`, `advisor`, `coadvisor`, `coadvisor_affiliation`, `city`, `date`, `label_student`, `label_advisor`, `label_coadvisor`, `refs_title`. The last EN file ends with `# References {-}` and an empty `::: {#refs}\n:::` div so citeproc places the bibliography there.
 
-- [ ] **Step 1: Fetch the two CSL files**
+- [x] **Step 1: Fetch the two CSL files**
 
 Run:
 ```bash
@@ -407,7 +407,7 @@ head -3 pubs/csl/abnt.csl
 ```
 Expected: both files start with `<?xml`. (CC BY-SA 3.0; note the origin in the commit message.)
 
-- [ ] **Step 2: Write `pubs/proposal/template.tex`**
+- [x] **Step 2: Write `pubs/proposal/template.tex`**
 
 ```latex
 % pubs/proposal/template.tex — "Proposta de Projeto de Graduação" (UFRJ / Poli / DEL) layout,
@@ -475,7 +475,7 @@ $endif$
 \end{document}
 ```
 
-- [ ] **Step 3: Write `meta.pt.yaml` and `meta.en.yaml`**
+- [x] **Step 3: Write `meta.pt.yaml` and `meta.en.yaml`**
 
 ```yaml
 # pubs/proposal/meta.pt.yaml
@@ -515,7 +515,7 @@ label_coadvisor: Co-advisor
 link-citations: true
 ```
 
-- [ ] **Step 4: Write `pubs/proposal/refs.bib`** (keys used by the text: `ww3manual`, `ww3repo`, `ww4repo`, `on525`, `ikuyajolu2023`, `yuan2024`, `trott2022`, `renomo`, `labeco`, `wwlab`)
+- [x] **Step 4: Write `pubs/proposal/refs.bib`** (keys used by the text: `ww3manual`, `ww3repo`, `ww4repo`, `on525`, `ikuyajolu2023`, `yuan2024`, `trott2022`, `renomo`, `labeco`, `wwlab`)
 
 ```bibtex
 @techreport{ww3manual,
@@ -546,7 +546,7 @@ link-citations: true
   howpublished = {\url{https://github.com/h0ffmann/ww-lab}} }
 ```
 
-- [ ] **Step 5: Write the eight EN section files** (the translator maps the headings to the DEL Portuguese names) (~3 800 words total; the full text is authored during execution, following this outline and the spec's argument; each file starts with its `# ` heading exactly as below so pandoc numbers them 1–8)
+- [x] **Step 5: Write the eight EN section files** (the translator maps the headings to the DEL Portuguese names) (~3 800 words total; the full text is authored during execution, following this outline and the spec's argument; each file starts with its `# ` heading exactly as below so pandoc numbers them 1–8)
 
 | File | Heading | Content (target words) |
 |---|---|---|
@@ -559,7 +559,7 @@ link-citations: true
 | `07-methodology.md` | `# METHODOLOGY` | profiling-first method; parity gates (bit-for-bit for build-flag rungs, tolerance for refactors); regtests + the lab's operational case; tooling (`wwlab`: Nix toolchain, just recipes, submodules, CI); how results are recorded; risks (600) |
 | `08-schedule.md` | `# SCHEDULE` | intro sentence; markdown table (Stage, Deadline) with 8 rows Oct 2026 → Apr 2027, caption `Table: Undergraduate project schedule.`; then `# References {-}` + `::: {#refs}\n:::` (150 + table) |
 
-- [ ] **Step 6: Build EN with both styles and check length and layout**
+- [x] **Step 6: Build EN with both styles and check length and layout**
 
 Run:
 ```bash
@@ -569,7 +569,7 @@ just proposal en ieee && pdftotext build/proposal_en.pdf - | grep -m1 '\[1\]'
 ```
 Expected: Pages between 8 and 12; the four layout markers found; IEEE build shows numeric `[1]` citations. If pages < 8, extend Justificativa/Metodologia; if > 12, trim.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add pubs/proposal pubs/csl
@@ -590,7 +590,7 @@ Tested: just proposal en renders N pages with header, numbered sections, referen
 **Interfaces:**
 - Produces: `python3 scripts/translate_md.py [--force] [--dry-run]`; env `GITHUB_TOKEN` (default backend `https://models.github.ai/inference`, model `openai/gpt-4o-mini`), overrides `TRANSLATE_BASE_URL`, `TRANSLATE_MODEL`, `TRANSLATE_API_KEY`. Module functions `protect(text) -> (masked, table)` and `restore(masked, table) -> text` (used by the test), placeholder format `⟦N⟧`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_translate_md.py
@@ -643,9 +643,9 @@ if __name__ == "__main__":
     unittest.main()
 ```
 
-- [ ] **Step 2: Run, expect failure** — `python3 -m unittest tests/test_translate_md.py -v` → error (module missing).
+- [x] **Step 2: Run, expect failure** — `python3 -m unittest tests/test_translate_md.py -v` → error (module missing).
 
-- [ ] **Step 3: Write `scripts/translate_md.py`**
+- [x] **Step 3: Write `scripts/translate_md.py`**
 
 ```python
 #!/usr/bin/env python3
@@ -807,14 +807,14 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-- [ ] **Step 4: Run the tests, expect pass** — `python3 -m unittest tests/test_translate_md.py -v` → 4 OK.
+- [x] **Step 4: Run the tests, expect pass** — `python3 -m unittest tests/test_translate_md.py -v` → 4 OK.
 
-- [ ] **Step 5: Generate PT and build it**
+- [x] **Step 5: Generate PT and build it**
 
 Run: `just translate --dry-run` (lists 8 files), then `GITHUB_TOKEN="$(gh auth token)" just translate` — if GitHub Models rejects the token, fall back to `TRANSLATE_BASE_URL=http://127.0.0.1:11434/v1 TRANSLATE_MODEL=dolphin-mixtral:8x7b TRANSLATE_API_KEY=ollama just translate`. Then `just proposal pt && pdfinfo build/proposal_pt.pdf | grep Pages`.
 Expected: 8 PT files with the generated header and the DEL headings; PT PDF within 8–12 pages; `just translate` again prints "everything up to date".
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/translate_md.py tests/test_translate_md.py pubs/proposal/pt pubs/proposal/.translation-cache.json
@@ -833,7 +833,7 @@ Tested: unittest tests/test_translate_md.py (3 pass); just translate produced 8 
 **Interfaces:**
 - Produces: `nix build .#book`, `.#proposal-pt`, `.#proposal-en`, `.#default` (all three, `result/*.pdf`); `nix flake check` builds them.
 
-- [ ] **Step 1: Add packages to `flake.nix` (inside the `let … in` from Task 1, replace the attrset)**
+- [x] **Step 1: Add packages to `flake.nix` (inside the `let … in` from Task 1, replace the attrset)**
 
 ```nix
         src = pkgs.lib.cleanSourceWith {
@@ -862,12 +862,12 @@ Tested: unittest tests/test_translate_md.py (3 pass); just translate produced 8 
       });
 ```
 
-- [ ] **Step 2: Build and check**
+- [x] **Step 2: Build and check**
 
 Run: `nix build . && ls -l result/ && nix flake check`
 Expected: three PDFs under `result/`, `nix flake check` exits 0. If xelatex fails on a missing package in the sandbox, add it to `texlive.combine` and note it in the flake comment.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add flake.nix flake.lock
@@ -884,7 +884,7 @@ Tested: nix build . yields result/{ww3-lab-course,proposal_pt,proposal_en}.pdf; 
 - Create: `.github/workflows/pubs.yml`
 - Modify: `README.md` (new "Publications" section after the Nix toolchain section; `pubs/` row in the table)
 
-- [ ] **Step 1: Write the workflow**
+- [x] **Step 1: Write the workflow**
 
 ```yaml
 # pubs — build every PDF with nix flake check; upload as artifacts; on main, also translate the
@@ -932,9 +932,9 @@ jobs:
           git push
 ```
 
-- [ ] **Step 2: README** — add `| \`pubs/\` | Course book and UFRJ/DEL proposal sources; \`just book\`, \`just proposal pt|en [abnt|ieee]\`, \`just translate\`; PDFs in \`pdf/\` |` to the table and a short "Publications" section listing the four recipes, the flake (`nix build .`), the EN-is-source rule, and the style option.
+- [x] **Step 2: README** — add `| \`pubs/\` | Course book and UFRJ/DEL proposal sources; \`just book\`, \`just proposal pt|en [abnt|ieee]\`, \`just translate\`; PDFs in \`pdf/\` |` to the table and a short "Publications" section listing the four recipes, the flake (`nix build .`), the EN-is-source rule, and the style option.
 
-- [ ] **Step 3: Open the PR**
+- [x] **Step 3: Open the PR**
 
 Run: `just pr` (commit message of the last commit becomes the PR summary; `Tested:` trailer present). Then check the Publications workflow run on the PR uploads three PDFs.
 
