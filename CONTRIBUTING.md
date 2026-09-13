@@ -8,7 +8,7 @@ following, in order of usefulness:
 2. **Namelists that don't actually work.** The `.nml` files here were written
    against the annotated upstream templates but not executed. If `ww3_grid`
    rejects one, please say which block and paste its stdout.
-3. **Stale links in `AWESOME-WW3.md`.** Entries marked `(v)` were fetched on
+3. **Stale links in `docs/AWESOME-WW3_202609.md`.** Entries marked `(v)` were fetched on
    2026-09-11; unmarked ones are from memory and may be wrong.
 4. **The wind direction convention in `examples/01`.** Deliberately left as an
    exercise, but a confirmed answer with the WW3 version you used is welcome.
