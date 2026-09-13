@@ -1,4 +1,4 @@
-# Awesome WAVEWATCH III
+# Awesome WW3
 
 A curated, annotated list for people who actually want to *run* WW3, not just cite it.
 
@@ -298,7 +298,7 @@ the GitHub mirrors; they're stale snapshots.
 
 ## Performance, HPC, GPU
 
-- **[Porting the WAVEWATCH III (v6.07) wave action source terms to GPU](https://gmd.copernicus.org/articles/16/1445/2023/)**
+- **[Porting the WAVEWATCH III® (v6.07) wave action source terms to GPU](https://gmd.copernicus.org/articles/16/1445/2023/)**
   `(v)` — Ikuyajolu, Van Roekel, Brus, Thomas, Deng & Sreepathi, *Geosci. Model Dev.* 16,
   1445–1462, 2023. **Read this before you plan any GPU work on WW3.** The essential findings:
   - They profiled WW3 and found `W3SRCEMD` (source-term integration) dominates; that's what

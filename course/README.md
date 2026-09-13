@@ -14,7 +14,7 @@ Twelve lessons, in order. Roughly a weekend if you run everything, an evening if
 | 07 | [Physics choices](07-physics-choices.md) | Choose a source-term package on purpose and know what you gave up. |
 | 08 | [Driving WW3 from Python](08-python.md) | Script the whole pipeline; run sweeps instead of editing files. |
 | 09 | [Performance and the RTX 4090](09-gpu-and-performance.md) | Know exactly why WW3 on a consumer GPU is a poor trade, and what to do instead. |
-| 10 | [WAVEWATCH IV and the future](10-ww4-and-the-future.md) | Judge how mature WW4 is, what's changing, and what of WW3 is worth learning anyway. |
+| 10 | [WW4 and the future](10-ww4-and-the-future.md) | Judge how mature WW4 is, what's changing, and what of WW3 is worth learning anyway. |
 | 11 | [SWAN](11-swan.md) | Recognise the coastal problems WW3 is wrong for, and build the model that isn't. |
 
 Do lesson 02 with `examples/01-fetch-limited-growth` open beside it. Do lesson 08 with

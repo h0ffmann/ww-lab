@@ -1,4 +1,4 @@
-# Porting WAVEWATCH III to C++/Kokkos on a Single H100
+# Porting WAVEWATCH III® to C++/Kokkos on a Single H100
 ## Revised plan: full repository map, translation coverage, and lessons from comparable Fortran ports
 
 Prepared 9 September 2026. Supersedes the Rust plan of the same date. Figures marked "est." are estimates. Module names are from the WW3 v7.x source tree; verify line counts against the pinned `develop` commit in Task 3.

@@ -1,6 +1,8 @@
-# wavewatch lab - III & IV
+# WW Lab
 
-A bootstrap repo for playing with **WAVEWATCH III** (WW3), NOAA/NCEP's third-generation
+Ocean wave modelling, hands on: WW3 today, WW4 tomorrow.
+
+A bootstrap repo for playing with **WAVEWATCH III®** (WW3), NOAA/NCEP's third-generation
 spectral wind-wave model. Built as a self-paced course: build the Fortran, run real cases,
 drive it from Python, then poke at the GPU question.
 
@@ -10,7 +12,7 @@ drive it from Python, then poke at the GPU question.
 
 | Path | What it is |
 |---|---|
-| `course/` | 12 lessons, in order, from "what is a wave spectrum" through GPUs, WAVEWATCH IV, and SWAN |
+| `course/` | 12 lessons, in order, from "what is a wave spectrum" through GPUs, WW4, and SWAN |
 | `examples/` | Self-contained runnable cases with real `.nml` input files |
 | `exercises/` | `pyww3` exercises (with solutions) — drive WW3 from Python |
 | `gpu/` | nvfortran / OpenACC / CUDA Fortran sandbox aimed at your RTX 4090 |
@@ -128,7 +130,7 @@ names as repository secrets, otherwise the step is skipped and the committed `pt
 
 ## Two things worth knowing before you invest
 
-**WAVEWATCH IV exists, and WW3 is scheduled for sunset.** [NOAA-EMC/WW4](https://github.com/NOAA-EMC/WW4)
+**WAVEWATCH IV™ (WW4) exists, and WW3 is scheduled for sunset.** [NOAA-EMC/WW4](https://github.com/NOAA-EMC/WW4)
 is a ground-up rewrite — new repository, no backward compatibility, C++ core with Rust
 alongside, Fortran demoted to a solver-only language. As of 2026-09-11 it had 36 commits
 and no releases: pre-alpha. First public release is hoped for summer 2027. The plan,
@@ -185,6 +187,13 @@ WW3 itself is distributed by NOAA/EMC under its own terms. No WW3 source is vend
 `scripts/01_get_ww3.sh` clones it, and upstream regression-test inputs are fetched rather
 than redistributed. Third-party tools listed in `docs/AWESOME-WW3_202609.md` carry their own licences
 (`pyww3` is GPL-3.0, `wavespectra` is MIT).
+
+## Trademarks
+
+WAVEWATCH III® is a registered trademark and WAVEWATCH IV™ a trademark of NOAA's National
+Weather Service. They are used here only to refer to that software. This repository is an
+independent learning project and is not affiliated with, sponsored by, or endorsed by NOAA. In
+prose we say WW3 and WW4.
 
 ## Contributing
 
