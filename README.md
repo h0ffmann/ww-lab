@@ -1,4 +1,4 @@
-# ww3-lab
+# wavewatch (III/IV)lab
 
 A bootstrap repo for playing with **WAVEWATCH III** (WW3), NOAA/NCEP's third-generation
 spectral wind-wave model. Built as a self-paced course: build the Fortran, run real cases,
