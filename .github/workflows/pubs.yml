@@ -21,8 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      # TODO(after h0ffmann/nix-config#35 merges): reference @main instead of the branch.
-      - uses: h0ffmann/nix-config/labs/publisher@feat/publisher-action
+      - uses: h0ffmann/nix-config/labs/publisher@main
         env:
           TRANSLATE_BASE_URL: ${{ secrets.TRANSLATE_BASE_URL }}
           TRANSLATE_API_KEY: ${{ secrets.TRANSLATE_API_KEY }}
