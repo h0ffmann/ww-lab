@@ -1,4 +1,4 @@
-# WW Lab
+# WW3 GPU Lab
 
 Ocean wave modelling, hands on: WW3 today, WW4 tomorrow.
 
