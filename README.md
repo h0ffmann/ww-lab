@@ -178,6 +178,8 @@ realistic experiment plan in [`course/09-gpu-and-performance.md`](course/09-gpu-
 ## Repo layout notes
 
 - `just` lists every task; `justfile` is the entry point, `scripts/` holds the logic.
+- [`docs/GLOSSARY.md`](docs/GLOSSARY.md) expands every abbreviation, switch, routine and tool
+  name used here (`ST4`, `W3SNL1`, `PDLIB`, `b4b`, `nccmp-tol`, …) and ends with an alphabetical index.
 - CI (`.github/workflows/ci.yml`) checks Python and shell syntax, compiles the Fortran
   sandbox with gfortran, and link-checks the markdown. It does not build WW3 — that needs
   the NOAA FTP data bundle and takes too long for a free runner.
