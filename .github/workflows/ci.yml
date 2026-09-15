@@ -13,13 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Python syntax
-        run: |
-          python -m compileall -q examples exercises bench
+      # No Python step: the lab code under bench/, examples/ and exercises/ is
+      # C++, Fortran and shell. The two publishing scripts in scripts/ are
+      # exercised by the pubs workflow.
 
       - name: Shell syntax
         run: |
@@ -50,14 +46,29 @@ jobs:
           # it must still be valid standard Fortran with OpenMP.
           gfortran -O1 -fopenmp -c bench/hetero_split.f90 -o /dev/null || \
             echo "note: hetero_split needs nvfortran -acc -mp"
-
-      - name: Benchmark case generator runs
-        run: |
-          cd bench && python3 make_bench_case.py --size small -o /tmp/bc >/dev/null
-          test -f /tmp/bc/ww3_grid.nml && test -f /tmp/bc/case.json
-          echo "case generator ok"
           gfortran -O1 -std=f2018 -c gpu/02_do_concurrent.f90 -o /dev/null || \
             echo "note: 02_do_concurrent needs a compiler with F2018 LOCAL() support"
+
+      - name: Example and exercise Fortran compiles and the parity test passes
+        run: |
+          # The example-01 input generator and the exercise-11 refactor need
+          # nothing but gfortran, so they are built and run here, strictly.
+          gfortran -O2 -std=f2018 -Wall -Wextra -Werror -fimplicit-none \
+            -o /tmp/make_inputs examples/01-fetch-limited-growth/make_inputs.F90
+          (cd /tmp && ./make_inputs && test -s depth.inp && test -s mask.inp)
+          gfortran -O2 -std=f2018 -Wall -Wextra -Werror -fimplicit-none \
+            -o /tmp/ex11_test exercises/solutions/ex11_refactor.F90 exercises/solutions/ex11_refactor_test.F90
+          /tmp/ex11_test
+          # examples/02-regional-real-forcing/make_bathy.F90 is not compiled
+          # here: it needs netcdf-fortran, and installing it from apt would make
+          # this syntax job depend on the runner's package state. It is built by
+          # that example's run.sh inside the pinned nix shell (netcdf-fortran
+          # 4.4.6), where it was compiled with -std=f2018 -Wall -Wextra and run
+          # on a synthetic GEBCO tile.
+
+      # The benchmark-case generator (kokkos/tools/bench_case) is C++ now and is
+      # covered by ctest in the `kokkos` job below (L1_test_bench_case pins its
+      # output byte for byte to the captured fixture), so it has no step here.
 
   kokkos:
     name: kokkos (serial-debug + openmp-release)

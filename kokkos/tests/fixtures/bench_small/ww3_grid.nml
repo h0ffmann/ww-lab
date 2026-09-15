@@ -1,0 +1,48 @@
+! ww3-lab benchmark case -- generated, do not hand-edit
+&SPECTRUM_NML
+  SPECTRUM%XFR   = 1.1
+  SPECTRUM%FREQ1 = 0.04118
+  SPECTRUM%NK    = 24
+  SPECTRUM%NTH   = 24
+/
+&RUN_NML
+  RUN%FLCX  = T
+  RUN%FLCY  = T
+  RUN%FLCTH = T
+  RUN%FLCK  = F
+  RUN%FLSOU = T
+/
+&TIMESTEPS_NML
+  TIMESTEPS%DTMAX = 2820.0
+  TIMESTEPS%DTXY  = 940.0
+  TIMESTEPS%DTKTH = 1410.0
+  TIMESTEPS%DTMIN = 10.0
+/
+&GRID_NML
+  GRID%NAME  = 'WW3LAB BENCH 120x80'
+  GRID%NML   = 'namelists.nml'
+  GRID%TYPE  = 'RECT'
+  GRID%COORD = 'CART'
+  GRID%CLOS  = 'NONE'
+  GRID%ZLIM  = -0.10
+  GRID%DMIN  = 2.50
+/
+&RECT_NML
+  RECT%NX  = 120
+  RECT%NY  = 80
+  RECT%SX  = 20000.0
+  RECT%SY  = 20000.0
+  RECT%SF  = 1.
+  RECT%X0  = 0.
+  RECT%Y0  = 0.
+  RECT%SF0 = 1.
+/
+&DEPTH_NML
+  DEPTH%SF       = -1.
+  DEPTH%FILENAME = 'depth.inp'
+  DEPTH%IDLA     = 1
+/
+&MASK_NML
+  MASK%FILENAME = 'mask.inp'
+  MASK%IDLA     = 1
+/

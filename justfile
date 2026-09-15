@@ -72,13 +72,17 @@ regtest test="ww3_tp1.1" ww3=ww3_src:
 # The simple regtest: build with the test's own switch_<sw>, then run it.
 rt test="ww3_tp1.1" sw="PR3_UQ" ww3=ww3_src: (build (ww3 + "/regtests/" + test + "/input/switch_" + sw) ww3) (regtest test ww3)
 
-# Run the first course example (fetch-limited growth, ~1 min) against <ww3>'s build.
-example01 ww3=ww3_src:
+# Run the first course example (fetch-limited growth, ~1 min) against <ww3>'s build; builds ww_fetch_analyse first.
+example01 ww3=ww3_src: (kokkos-build "openmp-release")
     cd examples/01-fetch-limited-growth && WW3="{{ww3}}" nix develop "{{pratico}}#ww3" --command bash run.sh
 
-# i9 vs 4090 benchmarks (kernel + real WW3 MPI scaling) against <ww3>'s build.
-bench ww3=ww3_src:
+# i9 vs 4090 benchmarks (kernel + real WW3 MPI scaling) against <ww3>'s build; builds ww_bench_case first.
+bench ww3=ww3_src: (kokkos-build "openmp-release")
     bash bench/run_all.sh "{{ww3}}/build"
+
+# Generate a WW3 benchmark case, e.g. `just bench-case --size small -o bench/case_small` (see bench/README.md).
+bench-case *args: (kokkos-build "openmp-release")
+    "{{kokkos_dir}}/build/openmp-release/tools/bench_case/ww_bench_case" "$@"
 
 # Build the GPU sandbox (needs nvfortran; `just gpu CC_ARCH=cc90` for an H100).
 gpu *args:
@@ -88,13 +92,17 @@ gpu *args:
 swan swan=swan_src:
     bash scripts/04_get_swan.sh "{{swan}}"
 
-# Delete run artefacts (bench, gpu binaries, example outputs); keep configs.
+# Delete run artefacts (bench, gpu binaries, example outputs, exercise builds); keep configs and kokkos/build.
 clean-runs:
     make -C bench clean
-    rm -rf exercises/runs gpu/00_hello_acc gpu/01_dispersion gpu/02_do_concurrent gpu/03_precision
-    find examples -name '*.nc' -delete
+    rm -rf gpu/00_hello_acc gpu/01_dispersion gpu/02_do_concurrent gpu/03_precision
+    rm -rf exercises/solutions/build exercises/solutions/out
+    rm -f examples/01-fetch-limited-growth/make_inputs examples/02-regional-real-forcing/make_bathy
+    rm -rf examples/02-regional-real-forcing/gfs.*
+    find examples -name '*.nc' ! -name gebco.nc ! -name gfs_winds.nc -delete
     find examples -name '*.ww3' -delete
     find examples -name '*.out' -delete
+    find examples -name '*.inp' -delete
 
 # ---------------------------------------------------------------------
 # Pull requests (ported from h0ffmann/marola)

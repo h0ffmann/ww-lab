@@ -1,0 +1,18 @@
+! ww3-lab benchmark case -- generated, do not hand-edit
+! Field output is off in ww3_shel.nml (DATE%FIELD stride '0': the case times
+! compute, not disk). To compare two runs with nccmp-tol, set that stride to
+! '3600', rerun ww3_shel, then run ww3_ounf with this namelist.
+&FIELD_NML
+  FIELD%TIMESTART  = '20200101 000000'
+  FIELD%TIMESTRIDE = '3600'
+  FIELD%TIMESTOP   = '20200101 120000'
+  FIELD%TIMESPLIT  = 0
+  FIELD%LIST       = 'HS'
+  FIELD%PARTITION  = '0'
+  FIELD%SAMEFILE   = T
+  FIELD%TYPE       = 4
+/
+&FILE_NML
+  FILE%PREFIX = 'ww3.'
+  FILE%NETCDF = 4
+/

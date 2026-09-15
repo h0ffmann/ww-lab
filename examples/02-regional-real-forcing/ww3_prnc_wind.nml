@@ -1,11 +1,17 @@
 ! -------------------------------------------------------------------- !
-! ww3-lab example 02 : convert ERA5 netCDF winds -> wind.ww3
+! ww3-lab example 02 : convert GFS netCDF winds -> wind.ww3
 !
 ! Run as:   ww3_prnc          (it reads ww3_prnc.nml, so symlink/copy this)
 !
 ! ww3_prnc interpolates a forcing field from its own netCDF grid onto the
 ! model grid and writes WW3's internal binary format. One invocation per
 ! forcing type; you rename the namelist between runs.
+!
+! The input file is what get_gfs.sh writes: GFS 0.25 deg UGRD/VGRD at 10 m,
+! subset to the box, merged along time and converted with ecCodes'
+! grib_to_netcdf. That converter names the two fields by their ecCodes
+! shortName with the digits moved last -- 10u/10v become u10/v10 -- and the
+! coordinates longitude / latitude / time.
 ! -------------------------------------------------------------------- !
 
 &FORCING_NML
@@ -16,21 +22,26 @@
 /
 
 &FILE_NML
-  FILE%FILENAME  = 'era5_winds.nc'
+  FILE%FILENAME  = 'gfs_winds.nc'
   FILE%LONGITUDE = 'longitude'
   FILE%LATITUDE  = 'latitude'
   FILE%VAR(1)    = 'u10'
   FILE%VAR(2)    = 'v10'
 /
 
-! ⚠ Verify variable and coordinate names against your actual download.
-! ERA5 from the CDS has used both 'longitude'/'latitude' and
-! 'valid_time' vs 'time' across format revisions. ncdump -h is your friend:
-!     ncdump -h era5_winds.nc | head -40
+! ⚠ Verify the variable and coordinate names against your actual file:
+!     ncdump -h gfs_winds.nc | head -40
+! and adjust FILE%VAR / FILE%LONGITUDE / FILE%LATITUDE if they differ (an
+! older or newer ecCodes may emit 'u10'/'v10' as '10u'/'10v', or a 'step'
+! axis next to 'time' if the conversion did not fold it into valid time).
 !
-! ⚠ Also check the longitude convention. ERA5 is commonly served on
-! 0..360. Our grid is on -52..-44. If they disagree, ww3_prnc will either
-! error or -- worse -- silently give you a field of zeros. Convert with:
-!     ds = ds.assign_coords(longitude=(((ds.longitude + 180) % 360) - 180))
-!     ds = ds.sortby('longitude')
+! ⚠ Also check the longitude convention. GFS is on 0..360; get_gfs.sh
+! relabels to -180..180 so it overlaps our -52..-44 grid. If they disagree,
+! ww3_prnc will either error or -- worse -- silently give you a field of
+! zeros. Fix by hand with:
+!     ncap2 -O -s 'where(longitude > 180.0) longitude = longitude - 360.0;' gfs_winds.nc gfs_winds.nc
+!
+! ⚠ FORCING%TIMESTART/TIMESTOP must lie inside the file's time axis; retime
+! them (and the other three dated namelists) to the cycle you fetched --
+! get_gfs.sh prints the sed to do it.
 ! -------------------------------------------------------------------- !

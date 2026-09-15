@@ -4,7 +4,7 @@ Ocean wave modelling, hands on: WW3 today, WW4 tomorrow.
 
 A bootstrap repo for playing with **WAVEWATCH III®** (WW3), NOAA/NCEP's third-generation
 spectral wind-wave model. Built as a self-paced course: build the Fortran, run real cases,
-drive it from Python, then poke at the GPU question.
+measure it, then port a kernel to C++/Kokkos and prove it still gives the same answer.
 
 ---
 
@@ -14,9 +14,10 @@ drive it from Python, then poke at the GPU question.
 |---|---|
 | `course/` | 12 lessons, in order, from "what is a wave spectrum" through GPUs, WW4, and SWAN |
 | `examples/` | Self-contained runnable cases with real `.nml` input files |
-| `exercises/` | `pyww3` exercises (with solutions) — drive WW3 from Python |
+| `exercises/` | Exercises for lessons 09–13 (with solutions), in shell, Fortran and C++: compile-option matrix, profile, refactor + parity test, Kokkos team reduce, L2 replay |
+| `kokkos/` | The C++/Kokkos half: the `ww_kokkos` kernel library (`W3SNL1` ported), intro programs, GoogleTest suites, and the tools `nccmp-tol`, `ww_bench_case`, `ww_fetch_analyse` |
 | `gpu/` | nvfortran / OpenACC / CUDA Fortran sandbox aimed at your RTX 4090 |
-| `bench/` | i9 vs 4090: a WW3-shaped kernel, a concurrent CPU+GPU split sweep, and real WW3 MPI scaling |
+| `bench/` | i9 vs 4090: a WW3-shaped kernel, a concurrent CPU+GPU split sweep, and real WW3 MPI scaling on cases from `ww_bench_case` |
 | `scripts/` | Get, build, and run WW3 (and SWAN); stage upstream regression tests |
 | `switches/` | Annotated switch files (WW3's compile-time feature selection) |
 | `env/` | conda environment + Dockerfile |
@@ -77,6 +78,16 @@ just regtest [test]      # rerun a test step by step against the current build (
 
 `ww3_tp1.x` and `ww3_tp2.2` need no FTP data. Output lands in `<ww3>/regtests/<test>/work_lab/`;
 for `ww3_tp1.1` the gridded `ww3.196806.nc` should show `hs` starting at 2.5 m on the equator row.
+
+The C++/Kokkos tree and the benchmark tooling, in the same shell:
+
+```bash
+just kokkos-test serial-debug        # configure + build + ctest (sanitizers, deterministic reductions)
+just kokkos-test openmp-release      # the same on the OpenMP backend, -O3
+just kokkos-cuda-test                # cuda-release in the #cuda shell (RTX 4090)
+just bench-case --size small -o bench/case_small   # a self-contained WW3 benchmark case
+just bench                           # kernel proxies + real WW3 MPI scaling (bench/run_all.sh)
+```
 
 What `just toolchain` prints today (`(v)` — this is the exact output on the lab machine):
 
@@ -177,10 +188,15 @@ realistic experiment plan in [`course/09-gpu-and-performance.md`](course/09-gpu-
 
 ## Repo layout notes
 
+- Lab code is C++, Fortran and shell; Python only in the publishing pipeline
+  (`scripts/book_prep.py`, `scripts/translate_md.py`). That is the stance the
+  [project proposal](pubs/proposal/pt/) sets out: the model's own languages, plus the one
+  the port is written in.
 - `just` lists every task; `justfile` is the entry point, `scripts/` holds the logic.
-- CI (`.github/workflows/ci.yml`) checks Python and shell syntax, compiles the Fortran
-  sandbox with gfortran, and link-checks the markdown. It does not build WW3 — that needs
-  the NOAA FTP data bundle and takes too long for a free runner.
+- CI (`.github/workflows/ci.yml`) checks shell syntax, compiles the Fortran sandbox and
+  the example/exercise Fortran with gfortran, builds and tests `kokkos/` on both CPU
+  presets, and link-checks the markdown. It does not build WW3 — that needs the NOAA FTP
+  data bundle and takes too long for a free runner.
 
 ## Licensing
 

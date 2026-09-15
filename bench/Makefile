@@ -3,15 +3,17 @@
 #   make            build everything available
 #   make cpu        CPU-only targets (gfortran; no NVIDIA SDK needed)
 #   make run        build and run the kernel benchmarks
-#   make case       generate the medium WW3 benchmark case
+#   make case       generate the medium WW3 benchmark case (needs ww_bench_case,
+#                   built by `just kokkos-build openmp-release`)
 #   make clean
 #
 # Override the GPU target for non-Ada cards:  make CC_ARCH=cc80
 
-FC_GNU  ?= gfortran
-FC_NV   ?= nvfortran
-CC_ARCH ?= cc89
-OPT     ?= -O3
+FC_GNU     ?= gfortran
+FC_NV      ?= nvfortran
+CC_ARCH    ?= cc89
+OPT        ?= -O3
+BENCH_CASE ?= ../kokkos/build/openmp-release/tools/bench_case/ww_bench_case
 
 .PHONY: all cpu run case clean
 
@@ -38,7 +40,7 @@ hetero_split: hetero_split.f90
 	$(FC_NV) $(OPT) -acc -gpu=$(CC_ARCH) -mp -Minfo=accel -o $@ $<
 
 case:
-	python3 make_bench_case.py --size medium
+	$(BENCH_CASE) --size medium -o case_medium
 
 run: all
 	@echo "=== kernel_cpu (gfortran, OpenMP) ==="; ./kernel_cpu
