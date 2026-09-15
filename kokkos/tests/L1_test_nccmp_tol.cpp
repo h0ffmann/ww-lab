@@ -199,10 +199,47 @@ TEST_F(NccmpTol, FillValuesIgnored) {
   ASSERT_EQ(stats.size(), 1U);
   const Stats& hs = stats[0];
   EXPECT_EQ(hs.n, kCells - 3);
+  EXPECT_EQ(hs.dropped, 2U);  // cells 1 and 2: ref valid, test fill / NaN
   EXPECT_EQ(hs.max_abs, 0.0);
   EXPECT_FALSE(std::isnan(hs.rms));
   EXPECT_TRUE(hs.pass);
   EXPECT_TRUE(ww::nccmp::all_pass(stats));
+}
+
+TEST_F(NccmpTol, AllNaNTestFieldFails) {
+  const auto v = base_values();
+  std::vector<float> w(kCells, std::numeric_limits<float>::quiet_NaN());
+  write_file(ref_, v);
+  write_file(test_, w);
+
+  // Nothing to compare is not agreement: a judged field with no cells fails.
+  const auto stats = ww::nccmp::compare_files(ref_.string(), test_.string(), hs_only());
+  ASSERT_EQ(stats.size(), 1U);
+  const Stats& hs = stats[0];
+  EXPECT_EQ(hs.n, 0U);
+  EXPECT_EQ(hs.dropped, kCells);
+  EXPECT_TRUE(hs.judged);
+  EXPECT_FALSE(hs.pass);
+  EXPECT_FALSE(ww::nccmp::all_pass(stats));
+  EXPECT_NE(ww::nccmp::format_table(stats).find("FAIL"), std::string::npos);
+}
+
+TEST_F(NccmpTol, PartialNaNIsReported) {
+  const auto v = base_values();
+  auto w = v;
+  w[3] = std::numeric_limits<float>::quiet_NaN();
+  w[9] = std::numeric_limits<float>::quiet_NaN();
+  write_file(ref_, v);
+  write_file(test_, w);
+
+  const auto stats = ww::nccmp::compare_files(ref_.string(), test_.string(), hs_only());
+  ASSERT_EQ(stats.size(), 1U);
+  const Stats& hs = stats[0];
+  EXPECT_EQ(hs.n, kCells - 2);
+  EXPECT_EQ(hs.dropped, 2U);
+  EXPECT_TRUE(hs.pass);  // the 22 compared cells agree; the drop is reported, not judged
+  EXPECT_TRUE(ww::nccmp::all_pass(stats));
+  EXPECT_NE(ww::nccmp::format_table(stats).find("dropped"), std::string::npos);
 }
 
 TEST_F(NccmpTol, UnlistedVariableReportedNotJudged) {

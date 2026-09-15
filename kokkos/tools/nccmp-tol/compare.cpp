@@ -177,14 +177,18 @@ Stats compare_field(const std::string& name, const Field& ref, const Field& test
                              " vs test " + shape_str(test.shape));
   }
   constexpr double eps = std::numeric_limits<double>::epsilon();
-  Stats s{name, 0, 0.0, 0.0, 0.0, tol != nullptr, tol != nullptr};
+  Stats s{name, 0, 0, 0.0, 0.0, 0.0, tol != nullptr, tol != nullptr};
   double sum_sq = 0.0;
   for (std::size_t i = 0; i < ref.values.size(); ++i) {
     const double r = ref.values[i];
     const double t = test.values[i];
-    if (std::isnan(r) || std::isnan(t)) continue;
-    if (ref.has_fill && r == ref.fill) continue;
-    if (test.has_fill && t == test.fill) continue;
+    // A cell the reference does not have is nobody's business (land, mask);
+    // a cell the reference has and the test lost is counted, and reported.
+    if (std::isnan(r) || (ref.has_fill && r == ref.fill)) continue;
+    if (std::isnan(t) || (test.has_fill && t == test.fill)) {
+      ++s.dropped;
+      continue;
+    }
     const double d = std::fabs(t - r);
     const double rel = d / std::max(std::fabs(r), eps);
     ++s.n;
@@ -194,6 +198,9 @@ Stats compare_field(const std::string& name, const Field& ref, const Field& test
     if (tol != nullptr && !(d <= tol->abs || rel <= tol->rel)) s.pass = false;
   }
   if (s.n > 0) s.rms = std::sqrt(sum_sq / static_cast<double>(s.n));
+  // Nothing to compare is not agreement: an all-NaN or all-fill test field
+  // must fail, not pass vacuously.
+  if (s.n == 0) s.pass = false;
   return s;
 }
 
@@ -230,16 +237,16 @@ std::string format_table(const std::vector<Stats>& stats) {
   for (const Stats& s : stats) width = std::max(width, s.name.size());
   std::ostringstream os;
   os << std::left << std::setw(static_cast<int>(width)) << "variable" << std::right
-     << std::setw(10) << "n" << std::setw(12) << "max|d|" << std::setw(12) << "rms"
-     << std::setw(12) << "max rel"
+     << std::setw(10) << "n" << std::setw(9) << "dropped" << std::setw(12) << "max|d|"
+     << std::setw(12) << "rms" << std::setw(12) << "max rel"
      << "  verdict\n";
-  os << std::string(width + 10 + 12 + 12 + 12 + 2 + 8, '-') << '\n';
+  os << std::string(width + 10 + 9 + 12 + 12 + 12 + 2 + 11, '-') << '\n';
   os << std::scientific << std::setprecision(3);
   for (const Stats& s : stats) {
+    const char* verdict = !s.judged ? "unlisted" : s.pass ? "PASS" : s.n == 0 ? "FAIL (n=0)" : "FAIL";
     os << std::left << std::setw(static_cast<int>(width)) << s.name << std::right
-       << std::setw(10) << s.n << std::setw(12) << s.max_abs << std::setw(12) << s.rms
-       << std::setw(12) << s.max_rel << "  "
-       << (!s.judged ? "unlisted" : s.pass ? "PASS" : "FAIL") << '\n';
+       << std::setw(10) << s.n << std::setw(9) << s.dropped << std::setw(12) << s.max_abs
+       << std::setw(12) << s.rms << std::setw(12) << s.max_rel << "  " << verdict << '\n';
   }
   return os.str();
 }

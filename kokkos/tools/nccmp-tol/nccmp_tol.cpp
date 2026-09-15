@@ -47,7 +47,15 @@ int main(int argc, char** argv) {
 
     std::cout << format_table(stats);
     std::size_t judged = 0;
-    for (const auto& s : stats) judged += s.judged ? 1U : 0U;
+    for (const auto& s : stats) {
+      judged += s.judged ? 1U : 0U;
+      // Not a failure by itself, but a test value missing where the reference
+      // has one is exactly what a broken kernel looks like: say so.
+      if (s.dropped > 0) {
+        std::cerr << "nccmp-tol: note: '" << s.name << "': " << s.dropped
+                  << " cell(s) NaN/fill in TEST where REF is valid\n";
+      }
+    }
     for (const auto& t : tolerances) {
       bool seen = false;
       for (const auto& s : stats) seen = seen || s.name == t.name;

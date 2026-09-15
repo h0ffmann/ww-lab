@@ -19,12 +19,13 @@ namespace ww::nccmp {
 /// The reduction of one variable over its compared cells.
 struct Stats {
   std::string name;
-  std::size_t n;   ///< cells compared (fill and NaN on either side excluded)
-  double max_abs;  ///< max |test - ref|
-  double rms;      ///< sqrt(mean (test - ref)^2)
-  double max_rel;  ///< max |test - ref| / max(|ref|, eps), eps = DBL_EPSILON
-  bool judged;     ///< listed in the tolerance file
-  bool pass;       ///< every cell within abs OR rel; false when not judged
+  std::size_t n;        ///< cells compared (fill and NaN on either side excluded)
+  std::size_t dropped;  ///< cells where ref is valid but test is NaN or fill
+  double max_abs;       ///< max |test - ref|
+  double rms;           ///< sqrt(mean (test - ref)^2)
+  double max_rel;       ///< max |test - ref| / max(|ref|, eps), eps = DBL_EPSILON
+  bool judged;          ///< listed in the tolerance file
+  bool pass;            ///< judged, n > 0 and every cell within abs OR rel
 };
 
 /// Compare `test` against `ref`, variable by variable, in `ref`'s variable order.
