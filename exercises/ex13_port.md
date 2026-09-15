@@ -25,11 +25,14 @@ replay appends to `kokkos/PORT_STATUS.md` and a reading of it.
    `work_a/` and `work_b/`, runs `ww3_shel` with `WW_KOKKOS_SNL1=0` and `=1`, converts
    both with `ww3_ounf`, and runs `nccmp-tol` with the default tolerance table.
 
-4. **Read the table.** For each judged field: `n`, `max_abs`, `rms`, `max_rel`, pass/fail.
+4. **Read the table.** nccmp-tol prints one row per variable, columns `variable  n
+   dropped  max|d|  rms  max rel  verdict`, where the verdict is `PASS`, `FAIL`,
+   `FAIL (n=0)` (judged but nothing left to compare — a failure) or `unlisted` (reported,
+   not judged), then a summary line `nccmp-tol: PASS|FAIL (k judged, m unlisted)`.
    Then answer, in writing:
    - Which fields are judged and which merely reported? Why is `dir` given a looser
      absolute tolerance than `hs`?
-   - Is `max_rel` on `hs` zero, ~1e-7, ~1e-5, or larger — and what does each of those
+   - Is `max rel` on `hs` zero, ~1e-7, ~1e-5, or larger — and what does each of those
      say about the port (bit-identical; float32 rounding; reduction order or contraction;
      a bug)?
    - If the two runs are identical to the last bit, what have you *not* shown?

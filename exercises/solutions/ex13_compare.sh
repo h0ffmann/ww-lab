@@ -54,24 +54,33 @@ esac
 
 [ -f "$STATUS" ] || { echo "!! $STATUS was not written -- see $OUT/replay.log"; exit 1; }
 
-# The table the replay just appended: everything after the last "L2 replays"
-# heading in PORT_STATUS.md.
-awk 'tolower($0) ~ /^#+ *l2 replays/ { buf = "" } { buf = buf $0 "\n" } END { printf "%s", buf }' \
-  "$STATUS" > "$OUT/l2_table.md"
+# The block the replay just appended. L2_replay.sh writes, under the one
+# "## L2 replays" section, a "### <test> -- <date> -- PASS|FAIL" heading per
+# replay, a one-row pipe table (switch, wall clocks, files) and nccmp-tol's raw
+# stdout in a ``` fence. Every past replay is still there, so take only what
+# follows the LAST "### " heading inside that section.
+awk '
+  /^## L2 replays$/ { insec = 1; next }
+  insec && /^## /   { insec = 0 }
+  insec && /^### /  { buf = "" }
+  insec             { buf = buf $0 "\n" }
+  END               { printf "%s", buf }' "$STATUS" > "$OUT/l2_table.md"
 
 echo
 echo "############ what PORT_STATUS.md now says"
 cat "$OUT/l2_table.md"
 
-# One-line verdict: nccmp-tol prints pass/FAIL per judged variable (see
-# kokkos/tools/nccmp-tol/README.md). Count only TABLE ROWS whose verdict cell
-# says so -- a `|`-led line ending in a pass/fail cell -- not the section
-# heading or the summary line, which repeat the word.
-n_pass=$(grep -ciE '^\|.*\|[[:space:]]*pass[[:space:]]*(\||$)' "$OUT/l2_table.md" || true)
-n_fail=$(grep -ciE '^\|.*\|[[:space:]]*fail[[:space:]]*(\||$)' "$OUT/l2_table.md" || true)
+# One-line verdict from nccmp-tol's rows inside the fence. Each is
+#   <variable>  <n>  <dropped>  <max|d|>  <rms>  <max rel>  <verdict>
+# with verdict PASS, FAIL, "FAIL (n=0)" (judged, nothing to compare -- a failure
+# by the README's definition) or unlisted (reported, not judged). The match is
+# on that shape, case-sensitive, so neither the "### ... -- PASS|FAIL" heading
+# nor the "nccmp-tol: FAIL (3 judged, ...)" summary line is counted.
+n_pass=$(grep -cE '^[[:alnum:]_]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+.*[[:space:]]PASS$' "$OUT/l2_table.md" || true)
+n_fail=$(grep -cE '^[[:alnum:]_]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+.*[[:space:]]FAIL( \(n=0\))?$' "$OUT/l2_table.md" || true)
 echo
 if [ "$rc" -eq 1 ] || [ "$n_fail" -gt 0 ]; then
-  echo "ex13: $n_fail judged field(s) OUTSIDE tolerance ($n_pass inside) -- read the max_rel column and lesson 12's tolerance discussion"
+  echo "ex13: $n_fail judged field(s) OUTSIDE tolerance ($n_pass inside) -- read the 'max rel' column and lesson 12's tolerance discussion"
 elif [ "$n_pass" -gt 0 ]; then
   echo "ex13: $n_pass judged field(s) inside tolerance, none outside -- parity holds for $TEST"
 else
