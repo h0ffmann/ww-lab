@@ -85,9 +85,9 @@ write. A `WW_DETERMINISTIC` build pins the scan to `Kokkos::Serial` after asking
 
 `05_team_scratch.cpp` is the shape of the DIA kernel (v): `TeamPolicy(npts, Kokkos::AUTO)`
 makes one **team** per sea point; `policy.set_scratch_size(0, PerTeam(bytes))` with
-`bytes = ScratchView::shmem_size(nth, nkx)` reserves level-0 scratch — shared memory on a
-GPU, a slice of a thread-local arena on a CPU; inside the lambda,
-`ScratchView ue(team.team_scratch(0), nth, nkx)` is an *unmanaged* view onto it (scratch is
+`bytes = ScratchSpectrum::shmem_size(nth, nkx)` reserves level-0 scratch — shared memory
+on a GPU, a slice of a thread-local arena on a CPU; inside the lambda,
+`ScratchSpectrum ue(team.team_scratch(0), nth, nkx)` is an *unmanaged* view onto it (scratch is
 a bump allocator; nothing frees). `TeamThreadRange(team, n)` parallelises across the team,
 `team.team_barrier()` separates writing scratch from reading it — not optional — and
 `Kokkos::single(PerTeam(team), …)` lets one thread write the team's result. The extended
@@ -125,7 +125,8 @@ and that is the difference between bit parity and "close" (v, `kokkos/README.md`
 ## Modern C++ hygiene, briefly
 
 RAII: `Kokkos::ScopeGuard guard(argc, argv)` initialises and finalises the runtime with
-the scope (v, every intro). No raw `new`/`delete`, no C arrays in kernels, `const` by
+the scope (v, every intro `main`; `06` is a library and exposes `init`/`finalize` entry
+points instead). No raw `new`/`delete`, no C arrays in kernels, `const` by
 default, C++20 (v, `kokkos/CMakeLists.txt`). One warning policy for the whole tree,
 `kokkos/cmake/CompilerWarnings.cmake`, applied to every target through
 `ww_apply_warnings` (v). The `serial-debug` preset adds AddressSanitizer and
