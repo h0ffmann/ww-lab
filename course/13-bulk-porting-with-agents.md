@@ -187,8 +187,9 @@ retires WW3 only once WW4 matures, so WW3 stays operational for years. The proje
 artefacts are shaped to be reusable there — L1 per-kernel tests on synthetic spectra, L2
 replays, GoogleTest, heritage headers — without contributing to WW4 or depending on it
 (`pubs/proposal/pt/04-scope.md` (v)). Licence (`AGENTS_KOKKOS` §4): the translated kernels
-derive from WW3, so `snl1_dia.cpp` and `snl1_tables.cpp` carry `LGPL-3.0-or-later`; the
-tooling around them, the shim included, is MIT (v); and nothing here is called WW4.
+derive from WW3, so `snl1_dia.cpp`, `snl1_tables.cpp` and the Fortran module that patches
+into the model, `w3kokkosmd.F90`, carry `LGPL-3.0-or-later`; the C++ tooling around them,
+`snl1_shim.cpp` and the C header included, is MIT (v); and nothing here is called WW4.
 
 ## Sources
 

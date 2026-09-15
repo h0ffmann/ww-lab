@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 #include "bench_case.hpp"
 
+#include <algorithm>
 #include <charconv>
 #include <chrono>
 #include <cmath>
