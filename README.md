@@ -32,7 +32,7 @@ Needs [Nix](https://nixos.org) and [just](https://github.com/casey/just); the co
 from the pinned flake (next section), nothing else to install.
 
 ```bash
-git clone --recurse-submodules git@github.com:h0ffmann/ww-lab.git && cd ww-lab
+git clone --recurse-submodules git@github.com:h0ffmann/ww3-gpu.git && cd ww3-gpu
 just submodule-init   # sparse-checkout nix-config (once per clone)
 just get              # clone upstream NOAA-EMC/WW3 develop into ~/src/WW3
 just rt               # build with ww3_tp1.1's own switch and run that regtest (~30 s)

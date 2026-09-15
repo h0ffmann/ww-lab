@@ -285,6 +285,7 @@ em caixa alta. Utiliza-se antes do nome da conferencia a expressao "In". Segundo
           <date variable="issued">
             <date-part name="year"/>
           </date>
+          <text variable="year-suffix"/>
         </group>
       </if>
       <else>
