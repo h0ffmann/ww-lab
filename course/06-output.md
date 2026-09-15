@@ -81,10 +81,11 @@ listing; install it on the host or fall back to `ncdump` and patience.
 
 Two habits worth forming:
 
-- Read `:units` and `:scale_factor` before you read a number. With `FIELD%TYPE = 2` in
-  `ww3_ounf.nml` the fields are packed short integers with a scale factor, and `ncdump`
-  prints the raw packed values — it never unpacks (`ncks --unpack` does). `TYPE = 3`, the
-  template default, writes plain floats and the problem goes away.
+- Read `:units` and `:scale_factor` before you read a number. `FIELD%TYPE` in
+  `ww3_ounf.nml` is `[2 = SHORT, 3 = it depends, 4 = REAL]`, template default `3` `(v)`.
+  With `2` the fields are packed short integers with a scale factor, and `ncdump` prints
+  the raw packed values — it never unpacks (`ncks --unpack` does). Both course examples set
+  `FIELD%TYPE = 4` `(v)`: plain floats, and the problem goes away.
 - The 2D spectrum is `efth(time, station, frequency, direction)`, in m²/Hz/rad. `Hs` from
   it is `4 sqrt(ΣΣ efth Δf Δθ)`. Computing that once from `ncdump` output — by hand or in
   twenty lines of Fortran — and checking it against the `HS` field is the consistency check

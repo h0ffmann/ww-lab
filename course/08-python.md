@@ -1,9 +1,9 @@
 # 08 — The Python ecosystem, and why this repo does not depend on it
 
 There is a real Python ecosystem around WW3, and you should know what is in it. This
-repo's lab code is C++, Fortran and shell; Python survives only in two publishing scripts
-in `scripts/` (pandoc tooling, not lab code). What the tools do, what one taught us, what
-we use instead:
+repo's rule: the lab code in `kokkos/`, `examples/`, `exercises/` and `bench/` is C++,
+Fortran and shell; Python is used only by the two publishing scripts in `scripts/`. What
+the tools do, what one taught us, what we use instead:
 
 ## The landscape
 
@@ -36,15 +36,15 @@ That is the job the Fortran generators in `examples/` do.
 
 The second half of the course is a benchmarking and porting project, and its rule is
 that every number must be reproducible by the lab on its own machines from one pinned
-toolchain (lesson 01). A Python environment is a second toolchain, with its own resolver,
-its own drift, and a CDS or NOMADS client that changes under you; the day it breaks is the
-day you cannot rerun last month's benchmark. WW4 did the same: it merged "Remove python
-dependence from compile system" on 2026-08-19 `(v)` (lesson 14). And the lab code has to
-be *inside* the parity gate — a generator, an analyser or a comparator that lives outside
-the compiled, tested tree is a place where a silent change hides. None of that is a
-criticism of the tools above: `WW3-tools` remains the right way to validate against buoys
-and altimeters, and `wavespectra` the best way to re-partition a spectrum offline. Use
-them from a notebook when you want to; nothing here will call them.
+toolchain (lesson 01). A Python *dependency* is a second toolchain, with its own resolver
+and its own drift; the day it breaks is the day you cannot rerun last month's benchmark.
+(Availability is another matter: the pinned `#ww3` shell ships `python3` with numpy and
+xarray `(v)`; nothing in the lab code imports them.) WW4 did the same: it merged "Remove
+python dependence from compile system" on 2026-08-19 `(v)` (lesson 14). And the lab code
+has to be *inside* the parity gate — a generator, analyser or comparator outside the
+compiled, tested tree is where a silent change hides. None of that is a criticism of the
+tools above: `WW3-tools` remains the right way to validate against buoys and altimeters,
+and `wavespectra` the best way to re-partition a spectrum offline.
 
 ## What we use instead
 
