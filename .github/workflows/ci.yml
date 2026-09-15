@@ -64,7 +64,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # .gitmodules uses ssh URLs, which a runner cannot clone, so the submodule
-      # is fetched below over https instead of by the checkout action.
+      # is fetched below over https instead of by the checkout action. It is also
+      # not a shallow fetch: the pinned nix-config commit lives on a topic branch,
+      # not on the `branch = main` that .gitmodules names, so `submodule update`
+      # can come back without it. The fallback then asks the remote for that exact
+      # SHA, which GitHub serves for any reachable commit in a public repository.
       - uses: actions/checkout@v4
         with:
           submodules: false
@@ -72,7 +76,12 @@ jobs:
       - name: Fetch the pratico toolchain submodule
         run: |
           git -c url.https://github.com/.insteadOf=git@github.com: \
-            submodule update --init --depth 1 nix-config
+            submodule update --init nix-config || {
+            sha=$(git ls-tree HEAD nix-config | awk '{print $3}')
+            git -C nix-config -c url.https://github.com/.insteadOf=git@github.com: \
+              fetch origin "$sha"
+            git -C nix-config checkout -q "$sha"
+          }
 
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
