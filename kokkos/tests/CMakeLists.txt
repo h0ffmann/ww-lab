@@ -36,3 +36,7 @@ ww_apply_warnings(ww_bench_snl1)
 if(WW_ENABLE_FORTRAN)
   add_subdirectory(fixtures)
 endif()
+
+# Task 5: comparator
+ww_add_test(L1_test_nccmp_tol)
+target_link_libraries(L1_test_nccmp_tol PRIVATE nccmp_tol_lib)
