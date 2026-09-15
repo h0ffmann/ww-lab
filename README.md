@@ -12,7 +12,7 @@ measure it, then port a kernel to C++/Kokkos and prove it still gives the same a
 
 | Path | What it is |
 |---|---|
-| `course/` | 12 lessons, in order, from "what is a wave spectrum" through GPUs, WW4, and SWAN |
+| `course/` | 16 lessons, 00–15, from "what is a wave spectrum" through the optimisation ladder (benchmark, modern Fortran, Kokkos, the W3SNL1 port, bulk porting), WW4 and SWAN |
 | `examples/` | Self-contained runnable cases with real `.nml` input files |
 | `exercises/` | Exercises for lessons 09–13 (with solutions), in shell, Fortran and C++: compile-option matrix, profile, refactor + parity test, Kokkos team reduce, L2 replay |
 | `kokkos/` | The C++/Kokkos half: the `ww_kokkos` kernel library (`W3SNL1` ported), intro programs, GoogleTest suites, and the tools `nccmp-tol`, `ww_bench_case`, `ww_fetch_analyse` |
@@ -147,7 +147,7 @@ names as repository secrets, otherwise the step is skipped and the committed `pt
 **WAVEWATCH IV™ (WW4) exists, and WW3 is scheduled for sunset.** [NOAA-EMC/WW4](https://github.com/NOAA-EMC/WW4)
 is a ground-up rewrite — new repository, no backward compatibility, C++ core with Rust
 alongside, Fortran demoted to a solver-only language. As of 2026-09-11 it had 36 commits
-and no releases: pre-alpha. **First public release is hoped for summer 2027 [align with Pedro]**. The plan,
+and no releases: pre-alpha. **First public release: expected January 2027** per the proposal's advisor ⚠ (no NOAA source; ON 525 said summer 2027). The plan,
 including the commitment to sunset WW3 support once WW4 matures, is in
 [NCEP Office Note 525](https://doi.org/10.25923/h7j3-1h25). Learn WW3 anyway — the physics
 is identical and the concepts transfer completely; only the interfaces won't. Details in

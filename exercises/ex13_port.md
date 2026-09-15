@@ -19,7 +19,7 @@ replay appends to `kokkos/PORT_STATUS.md` and a reading of it.
    `switch_PR3_UQ`, the `just rt` default), and `ST4` is the physics the port targets.
 
 2. **The tools.** `just kokkos-build openmp-release` builds `nccmp-tol`; the runtime
-   switch lives in the fork's patched `ww3_shel` (see `kokkos/PATCH.md` — without it both
+   switch lives in the fork's patched `ww3_shel` (see `kokkos/src/fortran_iface/PATCH.md` — without it both
    runs take the Fortran path, and step 3 proves the harness rather than the kernel,
    which is still the first thing to establish).
 

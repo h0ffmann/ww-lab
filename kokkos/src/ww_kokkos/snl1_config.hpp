@@ -3,7 +3,7 @@
 // the ported kernel speaks.
 //
 // WW3 heritage: WW3/model/src/w3snl1md.F90 (WAVEWATCH III 7.14, `develop`),
-// W3SNL1 lines 115-473 and INSNL1 lines 483-779. Config holds exactly what those
+// W3SNL1 lines 115-473 and INSNL1 lines 483-786. Config holds exactly what those
 // two routines read from W3GDATMD, under the WW3 names, so a reader can put this
 // file next to the Fortran and check it field by field. SIG travels separately
 // because W3SNL1 wants it on the device and INSNL1 wants it on the host.

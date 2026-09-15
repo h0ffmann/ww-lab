@@ -76,8 +76,8 @@ ncdump -h ww3.20240701_spec.nc            # the spectral file: (time, station, f
 
 `ncdump` ships with netcdf-c and is in the pinned toolchain `(v)`. For slicing, NCO's `ncks`
 is the tool — `ncks -v hs -d time,-1 ww3.nc` prints the last time step only, and
-`-d longitude,40 -d latitude,40` picks one point — ⚠ NCO is not in the `just toolchain`
-listing; install it on the host or fall back to `ncdump` and patience.
+`-d longitude,40 -d latitude,40` picks one point — nco 5.3.2 is in the pinned toolchain
+alongside cdo 2.5.1 `(v)`, even though `just toolchain` does not print either of them.
 
 Two habits worth forming:
 

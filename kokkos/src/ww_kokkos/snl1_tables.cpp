@@ -2,7 +2,7 @@
 // INSNL1 ported to C++: the DIA's quadruplet addressing and interpolation weights.
 //
 // WW3 heritage: WW3/model/src/w3snl1md.F90 (WAVEWATCH III 7.14, `develop`),
-// SUBROUTINE INSNL1, lines 483-779; the numbered section comments below are that
+// SUBROUTINE INSNL1, lines 483-786; the numbered section comments below are that
 // routine's own. This is phase-1 work: same expressions, same order, same float32
 // arithmetic. Nothing is regrouped, hoisted or "simplified", because the point of
 // the file is that it produces the Fortran's bits.

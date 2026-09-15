@@ -58,7 +58,7 @@ What the script does, step by step — read it, it is short:
    bottomlat=-32` with `var_UGRD=on var_VGRD=on lev_10_m_above_ground=on`, so you download
    two fields over one box instead of a 500 MB global GRIB.
 2. Repeats that for forecast hours 0–192 every 3 h of the chosen cycle.
-3. Concatenates the GRIB messages (`grib_copy`, or `cdo mergetime` where available) and
+3. Concatenates the GRIB messages along time with `cdo mergetime` (cdo 2.5.1 is in the pinned toolchain `(v)`) and
    converts with `grib_to_netcdf` → `gfs_winds.nc`.
 
 Two things to notice about what you just got. First, it is a **forecast**, not an
@@ -105,8 +105,8 @@ It interpolates a netCDF field onto your model grid and writes WW3's binary form
    may come back as 308°–316° even though you asked for −52°…−44°; if your grid is at −52°
    and your forcing is at 308°, you may get a silent field of zeros rather than an error.
    Check with `ncdump -v longitude gfs_winds.nc`. If it needs shifting, NCO does it in
-   place — `ncap2 -O -s 'longitude=longitude-360.' gfs_winds.nc gfs_winds.nc` ⚠ (NCO is
-   not in the `just toolchain` listing; `ncdump` from netcdf-c is).
+   place — `get_gfs.sh` ends with `ncap2 -O -s 'where(longitude > 180.0) longitude = longitude - 360.0;' gfs_winds.nc gfs_winds.nc`
+   (nco 5.3.2 is in the pinned toolchain next to `ncdump` `(v)`; the script refuses to run without `ncap2`).
 4. **Coverage.** The forcing must cover the model domain *and* the model time window with a
    margin. WW3 will not extrapolate off the end of your winds; it will stop, or hold the
    last field, depending on version.

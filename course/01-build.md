@@ -83,7 +83,7 @@ one key at a time:
 | `NOGRB` | GRIB output | None. The alternatives need NCEP's GRIB libraries. |
 | `NOPA` | coupling | No external coupler (NUOPC/OASIS off). |
 | `LRB4` | record length | 4-byte record-length units for the binary files (`mod_def.ww3`, `restart.ww3`). Must match between programs. |
-| `NC4` | netCDF | **Enable netCDF-4 output.** Without it `ww3_ounf`/`ww3_ounp` build but write nothing useful. |
+| `NC4` | netCDF | Legacy "enable netCDF-4 output" key. **Inert in 7.14** `(v)`: absent from `model/src/cmake/switches.json` and `model/bin/all_switches`, and no `W3_NC4` guard exists anywhere in `model/src`, so neither the CMake nor the classic build does anything with it. `ww3_ounf`/`ww3_ounp` are built whenever CMake finds netCDF; netCDF-3 vs -4 is the `NCTYPE` (3 or 4) input of `ww3_ounf.nml`. Kept in the lab switch files because it is harmless and turns up in older switch files. |
 | `SHRD` | parallelism | Shared memory, i.e. a serial binary. The alternative is `DIST MPI`; `OMPG OMPH` add OpenMP on top. |
 | `PR3 UQ` | propagation | Third-order ULTIMATE QUICKEST with the Garden Sprinkler correction. The standard choice. |
 | `FLX0` | air–sea flux | No separate flux routine: `ST4` computes its own stress in `W3SPR4`, so **upstream pairs `ST4` with `FLX0`** — `switch_NCEP_st4`, `switch_Ifremer2`, `switch_NCEP_glwu` and all 83 regtest switch files containing `ST4` `(v)`. The lab switch files used to carry `FLX2` (Tolman & Chalikov 1996, `w3flx2md.F90`, the companion of `ST2`); that pairing was replaced because `w3srcemd.F90` calls `W3FLX2` under `W3_FLX2` right after `W3SPR4`, overwriting the stress `ST4` had just computed `(v)`. `FLX4` goes with `ST6`. |
@@ -111,7 +111,7 @@ Two things to internalise:
    and nothing changed" is nearly always a stale build directory.
 2. **That makes the switch file the first rung of the optimisation ladder.** Together with
    the compiler flags it is a *matrix* — `SHRD` vs `DIST MPI` vs `OMPG OMPH`, `-O2` vs
-   `-O3 -march=native`, `NC4` on or off — and each cell of that matrix either reproduces
+   `-O3 -march=native` — and each cell of that matrix either reproduces
    the reference run bit for bit or it doesn't. Lesson 09 builds that matrix and shows how
    WW3's own regression suite is used as the gate.
 
@@ -154,7 +154,7 @@ keep it: `ww3_grid | tee ww3_grid.out`.
 | Symptom | Cause |
 |---|---|
 | `Cannot open include file 'netcdf.inc'` / undefined netCDF symbols | NetCDF Fortran bindings missing, or built with a *different* compiler. `.mod` files are compiler-specific and not interchangeable. |
-| `ww3_ounf` runs but writes no `.nc` | `NC4` missing from the switch file. |
+| `ww3_ounf`/`ww3_ounp` are not built at all | CMake did not find netCDF: the five netCDF programs are only added when `NetCDF_Fortran_FOUND` is true (`model/src/CMakeLists.txt`). Adding `NC4` to the switch file changes nothing `(v)`. |
 | `ww3_grid` demands an obstruction file you don't have | `FLAGTR` in `namelists.nml` isn't 0. |
 | Model runs, output is all zeros | Forcing never arrived. Check `log.ww3` — it prints a per-timestep table showing which inputs updated. |
 | Changed physics, nothing changed | Stale `build/`. `rm -rf build`, or `just build`. |

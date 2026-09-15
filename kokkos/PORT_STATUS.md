@@ -10,7 +10,7 @@ SPDX-License-Identifier: MIT
 
 | Routine | WW3 file:lines | Phase | Shim | L1 parity | L2 replay | Serial ms | OpenMP ms | CUDA ms | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| `W3SNL1` + `INSNL1` | `model/src/w3snl1md.F90:115-473`, `:483-786` | 1 (copy-in / kernel / copy-out) | `ww_snl1_init`, `ww_snl1` | **bit-identical** on all three presets (`L1_test_snl1_dia`, `L1_test_snl1_shim`, `shim_roundtrip`) | pending fork branch (`src/fortran_iface/PATCH.md`) | 25.88 | 5.95 | 0.75 | 1 000 points/call, end-to-end through the shim. Kernel alone: 24.96 / 5.02 / **0.047** ms. Timed with `-ffp-contract=off` — see below. |
+| `W3SNL1` + `INSNL1` | `model/src/w3snl1md.F90:115-473`, `:483-786` | 1 (copy-in / kernel / copy-out) | `ww_snl1_init`, `ww_snl1` | **bit-identical** on all three presets (`L1_test_snl1_dia`, `L1_test_snl1_shim`, `shim_roundtrip`) | pending fork branch (`src/fortran_iface/PATCH.md`) | 25.88 | 5.95 | 0.75 | 1 000 points/call, end-to-end through the shim. Kernel alone: 24.96 / 5.02 / **0.047** ms. Timed with `-ffp-contract=off` — see below. Level-0 team scratch per point = (NSPECY+NTH) + 8(NSPECX+NTH) + NSPEC floats (`snl1_dia.cpp`): 28 608 B = 27.9 KiB at NK=25/NTH=24 (XFR 1.1, λ 0.25); 52 992 B ≈ 52 KiB at NK=32/NTH=36, above CUDA's 48 KB per block, so `ww_snl1` reports `WW_KOKKOS_ERR_KERNEL` on such grids. Level-1 scratch is phase-2 work. |
 | `W3SNL2`…`W3SNL5` | `model/src/w3snl{2,3,4,5}md.F90` | not started | — | — | — | — | — | — | Out of scope; the `IQTPE <= 0` branch (`W3SNLGQM`) is not replaced either. |
 | `W3SIN4` / `W3SDS4` | `model/src/w3src4md.F90` | not started | — | — | — | — | — | — | The next candidate: same per-point shape as the DIA, so the same shim generalises. |
 

@@ -45,7 +45,7 @@ Keys come in mutually-exclusive *groups*. You pick exactly one from most groups.
 | `NOGRB` | GRIB | No GRIB output. Alternatives write GRIB via NCEP libs — don't bother. |
 | `NOPA` | coupling | No coupling to an external driver |
 | `LRB4` | I/O | 4-byte record length for binary files. Affects `mod_def.ww3`/`restart.ww3` portability. |
-| `NC4` | output | Enable netCDF-4 output. **Without this `ww3_ounf`/`ww3_ounp` won't produce `.nc`.** |
+| `NC4` | output | Legacy "netCDF-4 output" key. **Inert in 7.14** `(v)`: not in `model/src/cmake/switches.json` or `model/bin/all_switches`, and no `W3_NC4` guard in `model/src`, so no build honours it. `ww3_ounf`/`ww3_ounp` are built whenever CMake finds netCDF; netCDF-3 vs -4 is `NCTYPE` in `ww3_ounf.nml`. Kept here because it is harmless and appears in older switch files. |
 | `SHRD` / `DIST MPI` | parallel | Shared-memory (serial) vs distributed (MPI). `OMPG`/`OMPH` add OpenMP. |
 | `PR3 UQ` | propagation | Third-order ULTIMATE QUICKEST scheme with the Garden Sprinkler correction. The standard choice. `PR1` is first-order upwind, `PR2` second-order. |
 | `FLX0` / `FLX4` | wind flux | Air-sea flux computation. `FLX0` means *no separate flux routine*: `ST4` computes its own stress in `W3SPR4`, and upstream pairs `ST4` with `FLX0` everywhere (`switch_NCEP_st4`, `switch_Ifremer2`, every `ST4` regtest switch). The lab files used to say `FLX2` here; under `ST4` that made `W3FLX2` (Tolman & Chalikov 1996) overwrite `USTAR`/`CD` every step (`w3srcemd.F90`, the `W3_FLX2` block right after `W3SPR4`), so it was replaced. `FLX4` is the usual partner for `ST6`. |

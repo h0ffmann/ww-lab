@@ -2,7 +2,7 @@
 // The precomputed quadruplet addressing and weights of the DIA: INSNL1's output.
 //
 // WW3 heritage: WW3/model/src/w3snl1md.F90 (WAVEWATCH III 7.14, `develop`),
-// SUBROUTINE INSNL1, lines 483-779; the tables themselves live in W3ADATMD.
+// SUBROUTINE INSNL1, lines 483-786; the tables themselves live in W3ADATMD.
 //
 // Index convention: WW3 addresses a spectral bin as ISP = ITH + (IFR-1)*NTH with
 // ITH, IFR and ISP all 1-based; this port stores isp = ith + ifr*nth with all
@@ -49,7 +49,7 @@ struct Tables {
   RealView1D af11;
 };
 
-/// INSNL1 (w3snl1md.F90 lines 483-779). Host-side preprocessing: it computes the
+/// INSNL1 (w3snl1md.F90 lines 483-786). Host-side preprocessing: it computes the
 /// tables in host mirrors and deep-copies them to the device once, at set-up.
 /// `sig` is SIG(1:NK) on the host.
 Tables make_tables(const Config& c, ConstHostRealView1D sig);
