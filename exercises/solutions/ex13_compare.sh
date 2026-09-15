@@ -13,7 +13,7 @@
 # harness, not the kernel -- which is still the first thing to establish.
 #
 # Prerequisites (inside `just ww3`):
-#   just rt <regtest>                  the work_lab this replays
+#   just rt <regtest> <switch>         the work_lab this replays (ww3_ts1 ST4)
 #   just kokkos-build openmp-release   nccmp-tol
 #
 # Not executed in the environment this was written in (no WW3 checkout);
@@ -34,7 +34,7 @@ mkdir -p "$OUT"
   echo "!! $REPLAY not found -- it arrives with the nccmp-tol/L2 tooling (kokkos/tools/nccmp-tol)"
   exit 1
 }
-[ -d "$WW3DIR/regtests/$TEST/work_lab" ] || { echo "!! no work_lab for $TEST -- run: just rt $TEST"; exit 1; }
+[ -d "$WW3DIR/regtests/$TEST/work_lab" ] || { echo "!! no work_lab for $TEST -- run: just rt $TEST <switch>   (ww3_ts1 ST4)"; exit 1; }
 
 echo "############ L2 replay of $TEST"
 # L2_replay.sh exits 1 when a judged field is outside tolerance -- that is a

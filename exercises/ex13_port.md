@@ -13,8 +13,10 @@ replay appends to `kokkos/PORT_STATUS.md` and a reading of it.
 
 ## Steps
 
-1. **The reference run.** `just rt ww3_ts1` — source terms in isolation, so `W3SNL1` is a
-   large share of the work and any drift shows in `hs` and `fp`.
+1. **The reference run.** `just rt ww3_ts1 ST4` — source terms in isolation, so `W3SNL1` is a
+   large share of the work and any drift shows in `hs` and `fp`. The second argument
+   names the switch file: `ww3_ts1/input/` ships `switch_ST1`…`switch_ST6` (no
+   `switch_PR3_UQ`, the `just rt` default), and `ST4` is the physics the port targets.
 
 2. **The tools.** `just kokkos-build openmp-release` builds `nccmp-tol`; the runtime
    switch lives in the fork's patched `ww3_shel` (see `kokkos/PATCH.md` — without it both

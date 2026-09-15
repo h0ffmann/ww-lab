@@ -23,7 +23,7 @@ Everything runs inside the pinned toolchain shell, from the repository root:
 ```bash
 just ww3                          # gfortran, CMake, Kokkos, GoogleTest, NetCDF, gprof, cdo, ecCodes
 just rt ww3_tp1.1                 # the reference run that 09 and 13 compare against  (~30 s)
-just rt ww3_ts1                   # ...and the source-term one
+just rt ww3_ts1 ST4               # ...and the source-term one (its input/ has switch_ST4, not switch_PR3_UQ)
 just kokkos-build openmp-release  # nccmp-tol, ww_bench_case, ww_fetch_analyse
 ```
 

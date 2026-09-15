@@ -8,7 +8,7 @@ One working version of each exercise, in the language the sheet asks for.
 | 10 | `ex10_profile.sh <ww3-dir> [regtest]` | a WW3 checkout, `just rt`, `gprof` | ⚠ same |
 | 11 | `ex11_refactor.F90` + `ex11_refactor_test.F90` | gfortran | (v) built with `-std=f2018 -Wall -Wextra -fimplicit-none`, test passes (legacy and refactored agree bit for bit) |
 | 12 | `ex12_reduce.cpp` | Kokkos (the `#ww3` shell) | (v) built warning-free, self-check passes on the OpenMP backend (≤ 0.3 % from the closed form) |
-| 13 | `ex13_compare.sh <ww3-dir> [regtest]` | a WW3 checkout, `just rt ww3_ts1`, `kokkos/tests/L2_replay.sh`, `nccmp-tol` | ⚠ same as 09 |
+| 13 | `ex13_compare.sh <ww3-dir> [regtest]` | a WW3 checkout, `just rt ww3_ts1 ST4`, `kokkos/tests/L2_replay.sh`, `nccmp-tol` | ⚠ same as 09 |
 
 ## Building the compiled ones
 
