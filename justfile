@@ -92,13 +92,17 @@ gpu *args:
 swan swan=swan_src:
     bash scripts/04_get_swan.sh "{{swan}}"
 
-# Delete run artefacts (bench, gpu binaries, example outputs); keep configs.
+# Delete run artefacts (bench, gpu binaries, example outputs, exercise builds); keep configs and kokkos/build.
 clean-runs:
     make -C bench clean
-    rm -rf exercises/runs gpu/00_hello_acc gpu/01_dispersion gpu/02_do_concurrent gpu/03_precision
-    find examples -name '*.nc' -delete
+    rm -rf gpu/00_hello_acc gpu/01_dispersion gpu/02_do_concurrent gpu/03_precision
+    rm -rf exercises/solutions/build exercises/solutions/out
+    rm -f examples/01-fetch-limited-growth/make_inputs examples/02-regional-real-forcing/make_bathy
+    rm -rf examples/02-regional-real-forcing/gfs.*
+    find examples -name '*.nc' ! -name gebco.nc ! -name gfs_winds.nc -delete
     find examples -name '*.ww3' -delete
     find examples -name '*.out' -delete
+    find examples -name '*.inp' -delete
 
 # ---------------------------------------------------------------------
 # Pull requests (ported from h0ffmann/marola)

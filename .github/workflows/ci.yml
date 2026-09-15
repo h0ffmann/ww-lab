@@ -13,13 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Python syntax
-        run: |
-          python -m compileall -q examples exercises bench
+      # No Python step: the lab code under bench/, examples/ and exercises/ is
+      # C++, Fortran and shell. The two publishing scripts in scripts/ are
+      # exercised by the pubs workflow.
 
       - name: Shell syntax
         run: |
@@ -52,6 +48,23 @@ jobs:
             echo "note: hetero_split needs nvfortran -acc -mp"
           gfortran -O1 -std=f2018 -c gpu/02_do_concurrent.f90 -o /dev/null || \
             echo "note: 02_do_concurrent needs a compiler with F2018 LOCAL() support"
+
+      - name: Example and exercise Fortran compiles and the parity test passes
+        run: |
+          # The example-01 input generator and the exercise-11 refactor need
+          # nothing but gfortran, so they are built and run here, strictly.
+          gfortran -O2 -std=f2018 -Wall -Wextra -Werror -fimplicit-none \
+            -o /tmp/make_inputs examples/01-fetch-limited-growth/make_inputs.F90
+          (cd /tmp && ./make_inputs && test -s depth.inp && test -s mask.inp)
+          gfortran -O2 -std=f2018 -Wall -Wextra -Werror -fimplicit-none \
+            -o /tmp/ex11_test exercises/solutions/ex11_refactor.F90 exercises/solutions/ex11_refactor_test.F90
+          /tmp/ex11_test
+          # make_bathy needs netcdf-fortran; Ubuntu's package is usually there,
+          # but a missing or odd nf-config must not fail the syntax job.
+          sudo apt-get install -y -qq libnetcdff-dev >/dev/null
+          gfortran -O2 -std=f2018 -Wall -fimplicit-none $(nf-config --fflags) \
+            -c examples/02-regional-real-forcing/make_bathy.F90 -o /dev/null || \
+            echo "note: make_bathy needs netcdf-fortran (nf-config); compiled and tested in the nix shell"
 
       # The benchmark-case generator (kokkos/tools/bench_case) is C++ now and is
       # covered by ctest in the `kokkos` job below (L1_test_bench_case pins its
