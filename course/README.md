@@ -23,7 +23,9 @@ first half if you run everything; the second half takes as long as the port you 
 | 14 | [WW4 and the future](14-ww4-and-the-future.md) | Judge how mature WW4 is, what's changing, and what of WW3 is worth learning anyway. |
 | 15 | [SWAN](15-swan.md) | Recognise the coastal problems WW3 is wrong for, and build the model that isn't. |
 
-Do lesson 02 with `examples/01-fetch-limited-growth` open beside it.
+Do lesson 02 with `examples/01-fetch-limited-growth` open beside it. When an abbreviation,
+switch or routine name is unfamiliar, [`docs/GLOSSARY.md`](../docs/GLOSSARY.md) expands it and
+says where it comes from.
 
 Lessons 09 to 13 are the proposal's ladder (`pubs/proposal/pt/04-scope.md`) in order —
 compile options, run configuration, modern Fortran, C++/Kokkos kernels, bulk porting —
