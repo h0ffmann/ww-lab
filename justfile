@@ -225,3 +225,24 @@ l1-crosscheck ww3=ww3_src:
 # Remove kokkos/build.
 kokkos-clean:
     rm -rf "{{kokkos_dir}}/build"
+
+# ---------------------------------------------------------------------
+# Validation (kokkos/tools, kokkos/tests): field comparison, L2 replays, profiling
+# ---------------------------------------------------------------------
+
+nccmp_bin := kokkos_dir + "/build/openmp-release/tools/nccmp-tol/nccmp-tol"
+
+# Compare <test> against <ref> field by field; exit 0 iff every variable in <tol> is within tolerance.
+nccmp ref test tol="kokkos/tools/nccmp-tol/tolerances.txt":
+    [ -x "{{nccmp_bin}}" ] || just kokkos-build openmp-release
+    nix develop "{{pratico}}#ww3" --command "{{nccmp_bin}}" "{{ref}}" "{{test}}" "{{tol}}"
+
+# L2 replay of <test> (after `just rt <test>`): ww3_shel with WW_KOKKOS_SNL1=0 vs 1, nccmp-tol on the ww3_ounf output, row in kokkos/PORT_STATUS.md.
+l2 test="ww3_ts1" ww3=ww3_src:
+    [ -x "{{nccmp_bin}}" ] || just kokkos-build openmp-release
+    nix develop "{{pratico}}#ww3" --command bash kokkos/tests/L2_replay.sh "{{ww3}}" "{{test}}"
+
+# Phase tables for <test>: gprof (rebuilds WW3 with -pg into <ww3>/build-pg), then perf if the host has it.
+profile test="ww3_tp1.1" ww3=ww3_src:
+    nix develop "{{pratico}}#ww3" --command bash kokkos/tools/profile/gprof_table.sh "{{ww3}}" "{{test}}"
+    nix develop "{{pratico}}#ww3" --command bash kokkos/tools/profile/perf_table.sh "{{ww3}}" "{{test}}" || [ $? -eq 3 ]
