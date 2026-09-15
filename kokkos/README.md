@@ -2,7 +2,8 @@
 
 One CMake tree, one backend per configure preset. It holds the portable kernel
 library (`ww_kokkos`), the lesson-11 intro programs, the GoogleTest suites and the
-C++ tools. The `W3SNL1`/DIA port itself lands in `src/ww_kokkos/` in a later task.
+C++ tools. The first ported source term, `W3SNL1`/`INSNL1` (the DIA nonlinear
+interactions), lives in `src/ww_kokkos/snl1_*`.
 
 ## Toolchain
 
@@ -22,10 +23,12 @@ Pins: Kokkos 5.2.0, GoogleTest 1.18.0, CMake 4.4.2, gfortran 15.3.
 CMakeLists.txt        top level: options, find_package, the ww_kokkos target
 CMakePresets.json     serial-debug, openmp-release, cuda-release
 cmake/                CompilerWarnings.cmake -- the one warning policy
-src/ww_kokkos/        real.hpp (float32 + helpers), spectrum_fixtures.hpp (JONSWAP, cos^2)
+src/ww_kokkos/        real.hpp (float32 + helpers), spectrum_fixtures.hpp (JONSWAP, cos^2),
+                      snl1_{config,tables,dia} (the DIA port), fixture_io (fixture reader)
 src/fortran_iface/    bind(C) interface module and shim          (Task 4)
 intro/                01..06, one Kokkos concept each, each a CTest case
 tests/                kokkos_env.hpp (runtime lifetime) + L1_* GoogleTest suites
+tests/fixtures/       the verbatim Fortran reference + the committed binary fixtures
 tools/nccmp-tol/      per-field NetCDF comparator                (Task 5)
 tools/bench_case/     benchmark-case generator                   (Task 6)
 tools/fetch_analyse/  fetch-growth analyser                      (Task 6)
@@ -40,6 +43,7 @@ just kokkos-test serial-debug     # configure + build + ctest
 just kokkos-test openmp-release
 just kokkos-cuda-test             # cuda-release, inside the #cuda shell
 just kokkos-clean                 # rm -rf kokkos/build
+just snl1-fixtures                # regenerate the committed W3SNL1 fixture
 ```
 
 Or directly, from this directory inside a pratico shell:
@@ -96,9 +100,54 @@ concept it demonstrates does not hold, so CI runs the lesson material too.
 
 `tests/kokkos_env.hpp` starts the Kokkos runtime once per test binary from a
 `::testing::Environment` (two OpenMP threads). `ww_add_test(<name>)` in
-`tests/CMakeLists.txt` builds `<name>.cpp` and registers it with CTest.
+`tests/CMakeLists.txt` builds `<name>.cpp`, hands it `WW_FIXTURE_DIR` and registers
+it with CTest.
 
 Naming: `L1_*` are unit tests against analytic or captured-Fortran fixtures; `L2_*`
 replay a whole WW3 regtest.
+
+| suite | what it pins down |
+|---|---|
+| `L1_test_intro` | the lesson material's invariants |
+| `L1_test_snl1_tables` | `make_tables` against `INSNL1`: all 32 address tables exactly, the weights and `AF11` to 1e-6 relative |
+| `L1_test_snl1_dia` | `snl1` against `W3SNL1` to 1e-5 relative; plus zero-in/zero-out, the cubic scaling of `Snl`, and launch-to-launch bit-reproducibility |
+
+Kernels live in free functions rather than in `TEST()` bodies: nvcc rejects an
+extended lambda inside a private member function, and a `TEST()` body is one.
+
+## The W3SNL1 port
+
+`src/ww_kokkos/snl1_dia.cpp` and `snl1_tables.cpp` are translations, not
+reimplementations: same expressions, same order, same float32 arithmetic as
+`WW3/model/src/w3snl1md.F90` (WW3 7.14). They carry `SPDX-License-Identifier:
+LGPL-3.0-or-later`, like their source; the tooling around them is MIT.
+
+Two consequences worth knowing before touching them:
+
+- **Floating-point contraction is off** for `ww_kokkos` (`-ffp-contract=off`, and
+  `--fmad=false` on the CUDA backend). With GCC's default `-ffp-contract=fast`,
+  `-O3 -march=x86-64-v3` fuses `AWG1*UE(..) + AWG2*UE(..)` into an FMA -- one
+  rounding where the Fortran does two -- and `openmp-release` drifted 1.1e-5
+  relative from the fixture while `serial-debug` was bit-identical. With
+  contraction off all three presets reproduce the Fortran **bit for bit**.
+- **`x**n` is not `std::pow`.** gfortran lowers a real raised to an integer to a
+  binary-exponent chain of multiplications; `powf` does something else, to within
+  a ULP. `snl1_tables.cpp` has a `powi()` that reproduces the chain, and that is
+  what makes the parity exact rather than merely close.
+
+The DIA has no reduction, so `WW_DETERMINISTIC` changes nothing here: every output
+element is written by one thread from inputs no thread modifies.
+
+### The `ww3_lib` cross-check -- untested
+
+`tests/fixtures/gen_snl1_ww3lib.F90` and `just l1-crosscheck` exist to prove that
+`snl1_ref.F90` really is a verbatim copy, by running the genuine `W3SNL1` out of a
+configured WW3 build and `cmp`-ing the two fixture files. **Neither has ever been
+run.** The WW3 build available on this host (`~/src/WW3/build`) was configured with
+switch `NL0`, so `w3snl1md` is not compiled into its `libww3.a` and `w3snl1md.mod`
+does not exist; the CMake guard detects exactly that and skips the target with a
+warning. Running it needs a WW3 built with an `NL1` switch, e.g.
+`just build switches/switch_lab_shrd`. Until then the committed fixture, generated
+from the standalone reference, is the sole source of truth.
 
 SPDX-License-Identifier: MIT
