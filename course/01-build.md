@@ -86,7 +86,7 @@ one key at a time:
 | `NC4` | netCDF | **Enable netCDF-4 output.** Without it `ww3_ounf`/`ww3_ounp` build but write nothing useful. |
 | `SHRD` | parallelism | Shared memory, i.e. a serial binary. The alternative is `DIST MPI`; `OMPG OMPH` add OpenMP on top. |
 | `PR3 UQ` | propagation | Third-order ULTIMATE QUICKEST with the Garden Sprinkler correction. The standard choice. |
-| `FLX2` | air–sea flux | Tolman & Chalikov (1996) friction-velocity flux (`w3flx2md.F90` `(v)`), the companion of `ST2`. **Upstream pairs `ST4` with `FLX0`** — `switch_NCEP_st4`, `switch_Ifremer2`, `switch_NCEP_glwu` and all 40 regtest switch files containing `ST4` `(v)` — because `ST4` computes its own stress. `FLX2`+`ST4` here is this repo's own choice, inherited from `switches/README.md`; ⚠ whether the flux module is consulted at all under `ST4` is not verified against the manual, so treat `FLX0` as the safe edit. `FLX4` goes with `ST6`. |
+| `FLX2` | air–sea flux | Tolman & Chalikov (1996) friction-velocity flux (`w3flx2md.F90` `(v)`), the companion of `ST2`. **Upstream pairs `ST4` with `FLX0`** — `switch_NCEP_st4`, `switch_Ifremer2`, `switch_NCEP_glwu` and all 83 regtest switch files containing `ST4` `(v)` — because `ST4` computes its own stress. `FLX2`+`ST4` here is this repo's own choice, inherited from `switches/README.md`; ⚠ whether the flux module is consulted at all under `ST4` is not verified against the manual, so treat `FLX0` as the safe edit. `FLX4` goes with `ST6`. |
 | `LN1` | linear input | Cavaleri & Malanotte-Rizzoli seeding, so a spectrum can grow from calm. |
 | `ST4` | **source terms** | Ardhuin et al. 2010 input and dissipation. Lesson 07. |
 | `STAB0` | stability | No air–sea stability correction on the wind input. |
