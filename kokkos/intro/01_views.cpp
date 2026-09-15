@@ -15,6 +15,18 @@
 
 #include "ww_kokkos/real.hpp"
 
+namespace {
+
+// The memory space is part of a View's type, and this lab spells it out rather
+// than taking the default. `DefaultExecutionSpace::memory_space` is HostSpace for
+// the Serial/OpenMP presets and CudaSpace for cuda-release, so the alias is the
+// same code everywhere -- but it is now visible at the declaration whether a View
+// is reachable from host code or not. Leaving it implicit is how host code ends up
+// dereferencing device memory.
+using DeviceSpace = Kokkos::DefaultExecutionSpace::memory_space;
+
+}  // namespace
+
 int main(int argc, char* argv[]) {
   Kokkos::ScopeGuard guard(argc, argv);
   bool ok = true;
@@ -27,7 +39,7 @@ int main(int argc, char* argv[]) {
     // The string is a label. It is not decoration: it is what shows up in the
     // profiler, in a bounds-check abort and in a "View destroyed after finalize"
     // message, so it is always worth spelling properly.
-    Kokkos::View<ww::Real**> spectrum("intro.spectrum", nth, nk);
+    Kokkos::View<ww::Real**, DeviceSpace> spectrum("intro.spectrum", nth, nk);
 
     // extent(i) is size_t; rank and extents are compile-time/runtime metadata
     // carried by the View itself, so no separate nth/nk arguments travel around.

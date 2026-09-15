@@ -26,6 +26,9 @@
 namespace {
 
 using ExecSpace = Kokkos::DefaultExecutionSpace;
+// Spell the memory space out: HostSpace under the Serial/OpenMP presets,
+// CudaSpace under cuda-release. Never take the default for a View you allocate.
+using DeviceSpace = ExecSpace::memory_space;
 using TeamMember = Kokkos::TeamPolicy<ExecSpace>::member_type;
 /// Unmanaged view onto scratch: scratch memory is a bump allocator, so the view
 /// never owns and never frees.
@@ -46,7 +49,7 @@ int main(int argc, char* argv[]) {
     const ww::Real u10 = static_cast<ww::Real>(10);
     const ww::Real fetch = static_cast<ww::Real>(1.0e5);
 
-    Kokkos::View<ww::Real*> m0("intro.m0", npts);
+    Kokkos::View<ww::Real*, DeviceSpace> m0("intro.m0", npts);
 
     const size_t scratch_bytes = ScratchSpectrum::shmem_size(g.nth, nkx);
     Kokkos::TeamPolicy<ExecSpace> policy(npts, Kokkos::AUTO);

@@ -22,6 +22,14 @@
 #include "ww_kokkos/real.hpp"
 #include "ww_kokkos/spectrum_fixtures.hpp"
 
+namespace {
+
+// Spell the memory space out: HostSpace under the Serial/OpenMP presets,
+// CudaSpace under cuda-release. Never take the default for a View you allocate.
+using DeviceSpace = Kokkos::DefaultExecutionSpace::memory_space;
+
+}  // namespace
+
 int main(int argc, char* argv[]) {
   Kokkos::ScopeGuard guard(argc, argv);
   double err = 0.0;
@@ -32,7 +40,7 @@ int main(int argc, char* argv[]) {
     const ww::Real theta_mean = static_cast<ww::Real>(0);
     const ww::Real gamma = static_cast<ww::Real>(1);
 
-    Kokkos::View<ww::Real**> e("intro.E", g.nth, g.nk);
+    Kokkos::View<ww::Real**, DeviceSpace> e("intro.E", g.nth, g.nk);
 
     // MDRangePolicy tiles the (ith, ik) rectangle itself. Writing the same thing
     // as a RangePolicy over ith*nk + ik would work, but the tiling is what lets

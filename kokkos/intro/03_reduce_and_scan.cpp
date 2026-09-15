@@ -24,14 +24,16 @@
 
 namespace {
 
+// Spell the memory space out: HostSpace under the Serial/OpenMP presets,
+// CudaSpace under cuda-release. Never take the default for a View you allocate.
+using DeviceSpace = Kokkos::DefaultExecutionSpace::memory_space;
+
 #if defined(WW_DETERMINISTIC) && defined(KOKKOS_ENABLE_SERIAL)
 // Serial is only a legal choice if it can reach the default memory space; on a
 // CUDA build it cannot, and a bit-reproducible run needs a different answer than
 // "run it on the host". SpaceAccessibility is how you ask that question.
 using ScanSpace =
-    std::conditional_t<Kokkos::SpaceAccessibility<
-                           Kokkos::Serial,
-                           Kokkos::DefaultExecutionSpace::memory_space>::accessible,
+    std::conditional_t<Kokkos::SpaceAccessibility<Kokkos::Serial, DeviceSpace>::accessible,
                        Kokkos::Serial, Kokkos::DefaultExecutionSpace>;
 #else
 using ScanSpace = Kokkos::DefaultExecutionSpace;
@@ -47,9 +49,9 @@ int main(int argc, char* argv[]) {
     const ww::Real u10 = static_cast<ww::Real>(10);
     const ww::Real dx0 = static_cast<ww::Real>(5.0e3);  // 5 km at the coast
 
-    Kokkos::View<ww::Real*> dx("intro.dx", npts);
-    Kokkos::View<ww::Real*> fetch("intro.fetch", npts);
-    Kokkos::View<ww::Real*> hs("intro.hs", npts);
+    Kokkos::View<ww::Real*, DeviceSpace> dx("intro.dx", npts);
+    Kokkos::View<ww::Real*, DeviceSpace> fetch("intro.fetch", npts);
+    Kokkos::View<ww::Real*, DeviceSpace> hs("intro.hs", npts);
 
     // A stretched transect: cells widen offshore, as a nested WW3 grid does. The
     // cumulative fetch is therefore a real prefix sum, not i * dx.
