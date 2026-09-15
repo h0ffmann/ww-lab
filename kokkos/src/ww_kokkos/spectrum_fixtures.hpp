@@ -25,7 +25,7 @@
 
 namespace ww {
 
-inline constexpr Real kPi = static_cast<Real>(3.14159265358979323846);
+// kPi comes from real.hpp: one definition shared with the ported kernels.
 inline constexpr Real kGravity = static_cast<Real>(9.81);
 /// JONSWAP peak enhancement for a young, fetch-limited sea.
 inline constexpr Real kJonswapGamma = static_cast<Real>(3.3);

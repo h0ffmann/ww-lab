@@ -18,6 +18,11 @@ namespace ww {
 /// Working precision of the spectral state, matching WW3's default REAL.
 using Real = float;
 
+/// PI exactly as constants.F90 line 72 builds it: the double literal rounded to
+/// REAL once. Defined here, and only here, so the fixtures and the ported kernels
+/// cannot drift apart by a ULP -- a ULP is the whole budget of a bit-parity test.
+inline constexpr Real kPi = static_cast<Real>(3.141592653589793);
+
 /// x squared. Spelled out so kernels never call std::pow for an integer power.
 KOKKOS_INLINE_FUNCTION constexpr Real sqr(Real x) { return x * x; }
 

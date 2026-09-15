@@ -33,11 +33,11 @@ using ConstRealView2D = Kokkos::View<const Real**, Kokkos::LayoutLeft, DeviceSpa
 using HostRealView1D = Kokkos::View<Real*, Kokkos::HostSpace>;
 using ConstHostRealView1D = Kokkos::View<const Real*, Kokkos::HostSpace>;
 
-// PI, TPI and TPIINV exactly as constants.F90 lines 72-75 builds them: PI is
-// rounded to REAL first, and only then doubled and inverted. Evaluating
-// 1/(2*pi) in double and narrowing at the end is a different number, by up to a
-// ULP, and a ULP is the whole budget of a bit-parity test.
-inline constexpr Real kPi = static_cast<Real>(3.141592653589793);
+// TPI and TPIINV exactly as constants.F90 lines 72-75 builds them from PI
+// (ww::kPi, real.hpp): PI is rounded to REAL first, and only then doubled and
+// inverted. Evaluating 1/(2*pi) in double and narrowing at the end is a
+// different number, by up to a ULP, and a ULP is the whole budget of a
+// bit-parity test.
 inline constexpr Real kTpi = static_cast<Real>(2) * kPi;
 inline constexpr Real kTpiInv = static_cast<Real>(1) / kTpi;
 
