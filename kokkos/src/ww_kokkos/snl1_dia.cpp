@@ -20,9 +20,12 @@
 // already bit-identical across backends and thread counts.
 //
 // Scratch budget: (NSPECY + NTH) + 8*(NSPECX + NTH) + NSPEC floats. For the
-// lab's NK=25/NTH=24 grid that is ~28 KB, inside the 48 KB a CUDA block gets;
-// a much larger spectral grid would need level-1 scratch instead, which is why
-// the size is checked against the policy's maximum before the launch.
+// lab's NK=25/NTH=24 grid that is ~28 KB, and ~52 KB at NK=32/NTH=36. The
+// ceiling is TeamPolicy::scratch_size_max(0), which for the Kokkos 5.2 CUDA
+// backend is the device's opt-in shared-memory limit minus ~24.6 KB (about
+// 75 KB on an RTX 4090), not the classic 48 KB; a spectral grid beyond that
+// would need level-1 scratch instead, which is why the size is checked against
+// the policy's maximum before the launch.
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 

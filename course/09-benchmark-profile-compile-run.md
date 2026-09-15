@@ -107,7 +107,7 @@ Vary one axis at a time. Everything here is baked in at build time
 | Compiler | gfortran 15.3 (pinned in pratico (v)); `nvfortran` on the CPU as a stepping stone (lesson 01) | different compilers: rounding-level differences, use `nccmp-tol` |
 | Flags | `-DCMAKE_BUILD_TYPE=Release` vs `Debug`; `-O2` vs `-O3 -march=native` | `-O3` may vectorise reductions → check b4b first |
 | Parallel switch | `SHRD` (serial), `DIST MPI`, plus `OMPG`/`OMPH` for OpenMP on top (v `switches/README.md`) | `npl_b4b`/`nth_b4b` |
-| Output | `NCTYPE` 3 vs 4 in `ww3_ounf.nml` and the output stride; `NC4` in the switch file is inert in 7.14 — not in `switches.json`, no `W3_NC4` guard (v) | none; it is I/O |
+| Output | `FILE%NETCDF` 3 vs 4 in `ww3_ounf.nml` and the output stride; `NC4` in the switch file is inert in 7.14 — not in `switches.json`, no `W3_NC4` guard (v) | none; it is I/O |
 
 `exercises/solutions/ex09_matrix.sh` runs three of these axes on `ww3_tp1.1` and
 tabulates wall-clock and the comparator's verdict; `exercises/ex09_bench.md` is the sheet.

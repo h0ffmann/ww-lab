@@ -93,7 +93,7 @@ a bump allocator; nothing frees). `TeamThreadRange(team, n)` parallelises across
 `Kokkos::single(PerTeam(team), …)` lets one thread write the team's result. The extended
 spectrum with its parametric tail lives there because it is per point, re-read many times,
 and must never be a global allocation inside a time loop (v). The port's scratch for
-`NK=25, NTH=24` is about 28 KB, inside the 48 KB a CUDA block gets (v, `snl1_dia.cpp`).
+`NK=25, NTH=24` is about 28 KB, well inside `TeamPolicy::scratch_size_max(0)`, which for the Kokkos 5.2 CUDA backend is the device's opt-in shared-memory limit minus ~24.6 KB — about 75 KB on the RTX 4090, not the classic 48 KB (v, `snl1_dia.cpp`, `Kokkos_Cuda_Parallel_Team.hpp`).
 
 ## `KOKKOS_LAMBDA` and what a kernel may touch
 
