@@ -69,7 +69,7 @@ flowchart TD
         E4a[só rotinas ainda dominantes<br/>após a etapa 3] --> E4g{ganho medido e<br/>paridade?}
     end
     E4g -- sim --> OP[Entra na configuração operacional]
-    E4g -- não --> LIM[Medida do limite;<br/>recomendação de não operar em GPU]
+    E4g -- não --> LIM[Medida do limite,<br/>recomendação de não operar em GPU]
 
     classDef gate fill:#fff3cd,stroke:#856404;
     class E1g,E2g,E3g,E4g gate;
