@@ -22,6 +22,9 @@ csl="$root/pubs/csl/$style.csl"
 
 if [ "$target" = book ]; then
   prep="$out_dir/book"
+  # Start from an empty prep dir: a lesson renamed or removed in course/ would
+  # otherwise leave its old copy behind and pandoc would see both (duplicate labels).
+  rm -rf "$prep"
   python3 "$root/scripts/book_prep.py" "$root/course" "$prep"
   mapfile -t inputs < <(ls "$prep"/[0-9][0-9]-*.md | sort)
   pandoc "${inputs[@]}" \
