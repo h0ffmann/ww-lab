@@ -48,7 +48,7 @@ Keys come in mutually-exclusive *groups*. You pick exactly one from most groups.
 | `NC4` | output | Enable netCDF-4 output. **Without this `ww3_ounf`/`ww3_ounp` won't produce `.nc`.** |
 | `SHRD` / `DIST MPI` | parallel | Shared-memory (serial) vs distributed (MPI). `OMPG`/`OMPH` add OpenMP. |
 | `PR3 UQ` | propagation | Third-order ULTIMATE QUICKEST scheme with the Garden Sprinkler correction. The standard choice. `PR1` is first-order upwind, `PR2` second-order. |
-| `FLX2` / `FLX4` | wind flux | Air-sea flux computation. `FLX2` pairs with ST4-ish setups; `FLX4` is the usual partner for `ST6`. |
+| `FLX0` / `FLX4` | wind flux | Air-sea flux computation. `FLX0` means *no separate flux routine*: `ST4` computes its own stress in `W3SPR4`, and upstream pairs `ST4` with `FLX0` everywhere (`switch_NCEP_st4`, `switch_Ifremer2`, every `ST4` regtest switch). The lab files used to say `FLX2` here; under `ST4` that made `W3FLX2` (Tolman & Chalikov 1996) overwrite `USTAR`/`CD` every step (`w3srcemd.F90`, the `W3_FLX2` block right after `W3SPR4`), so it was replaced. `FLX4` is the usual partner for `ST6`. |
 | `LN1` | linear input | Cavaleri & Malanotte-Rizzoli linear wave growth (seeds the spectrum from calm) |
 | `ST4` / `ST6` / `ST2` | **source terms** | The big one. `ST4` = Ardhuin et al. 2010 (saturation-based dissipation + swell dissipation). `ST6` = Rogers/Babanin/Zieger observation-based. `ST0` = no wind input/dissipation (pure propagation tests). |
 | `STAB0` | stability | No stability correction on the wind input |
