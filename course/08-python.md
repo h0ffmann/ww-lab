@@ -2,8 +2,8 @@
 
 There is a real Python ecosystem around WW3, and you should know what is in it. This
 repo's rule: the lab code in `kokkos/`, `examples/`, `exercises/` and `bench/` is C++,
-Fortran and shell; Python is used only by the two publishing scripts in `scripts/`. What
-the tools do, what one taught us, what we use instead:
+Fortran and shell; Python is used only by the two publishing scripts in `scripts/` and
+their unit tests in `tests/`. What the tools do, what one taught us, what we use instead:
 
 ## The landscape
 

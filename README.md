@@ -151,13 +151,13 @@ and no releases: pre-alpha. **First public release is hoped for summer 2027 [ali
 including the commitment to sunset WW3 support once WW4 matures, is in
 [NCEP Office Note 525](https://doi.org/10.25923/h7j3-1h25). Learn WW3 anyway — the physics
 is identical and the concepts transfer completely; only the interfaces won't. Details in
-[`course/10-ww4-and-the-future.md`](course/10-ww4-and-the-future.md).
+[`course/14-ww4-and-the-future.md`](course/14-ww4-and-the-future.md).
 
 **SWAN is not a competitor, it's the other half of the toolkit.** Implicit,
 unconditionally stable, no CFL limit, stationary mode. WW3 offshore, SWAN nearshore is the
 standard coastal architecture. Source is now on
 [TU Delft GitLab](https://gitlab.tudelft.nl/citg/wavemodels/swan), which most tutorials
-haven't caught up with. See [`course/11-swan.md`](course/11-swan.md).
+haven't caught up with. See [`course/15-swan.md`](course/15-swan.md).
 
 ## The short answer on your RTX 4090
 
@@ -177,14 +177,15 @@ short shelf life.
 So: compile WW3 with `nvfortran` on the **CPU** (that part works and is useful), use
 `gpu/` to learn GPU Fortran on kernels that actually suit a 4090, and use `bench/` to
 measure your own hardware rather than trusting anyone's table — including mine. Full reasoning and a
-realistic experiment plan in [`course/09-gpu-and-performance.md`](course/09-gpu-and-performance.md).
+realistic experiment plan in [`course/09-benchmark-profile-compile-run.md`](course/09-benchmark-profile-compile-run.md).
 
 ## Conventions used in this repo
 
 - `⚠` — I could not verify this; check it before trusting it.
 - `(v)` — verified against a source I actually fetched while building this repo.
 - Input files use the **namelist** (`.nml`) interface, not the legacy `.inp` fixed-format
-  files. Both work in WW3 v7; `.nml` is far easier to read and is what `pyww3` targets.
+  files. Both work in WW3 v7; `.nml` is far easier to read, and it is what the annotated
+  templates in `$WW3/model/nml/` and the generators in `examples/` produce.
 
 ## Repo layout notes
 

@@ -12,7 +12,7 @@ following, in order of usefulness:
    2026-09-11; unmarked ones are from memory and may be wrong.
 4. **The wind direction convention in `examples/01`.** Deliberately left as an
    exercise, but a confirmed answer with the WW3 version you used is welcome.
-5. **WW4 status.** `course/10-ww4-and-the-future.md` quotes a repository snapshot from
+5. **WW4 status.** `course/14-ww4-and-the-future.md` quotes a repository snapshot from
    2026-09-11 and a timeline from NCEP Office Note 525. That will go stale faster than
    anything else here. Updates very welcome, with the date you checked.
 
@@ -20,8 +20,9 @@ following, in order of usefulness:
 
 - Keep the `⚠` / `(v)` convention. Marking uncertainty honestly is the point.
 - Don't vendor WW3 source. Scripts fetch it.
-- Run `python -m compileall examples exercises` and `bash -n` on any shell
-  script you touch. CI does both.
+- Run `just kokkos-test serial-debug` after touching `kokkos/`, and `bash -n` plus
+  shellcheck on any shell script you touch. CI does all of these (the `kokkos` and
+  `lint` jobs in `.github/workflows/ci.yml`).
 - Prose style: plain, direct, no filler. If a sentence doesn't teach something,
   cut it.
 

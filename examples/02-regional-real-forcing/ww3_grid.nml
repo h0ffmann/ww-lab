@@ -70,7 +70,7 @@
   RECT%SF0 = 1.
 /
 
-! Written by make_bathy.py from GEBCO. GEBCO elevation is already negative
+! Written by make_bathy.F90 from GEBCO. GEBCO elevation is already negative
 ! below sea level, which is exactly WW3's convention, so SF = 1.
 &DEPTH_NML
   DEPTH%SF       = 1.

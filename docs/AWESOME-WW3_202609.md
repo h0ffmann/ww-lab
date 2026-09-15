@@ -53,7 +53,7 @@ the URL and current status may have drifted. Check before relying on them.
 
 **WW4 is real, it is a ground-up rewrite rather than a new WW3 version, and as of
 late 2026 it is pre-alpha.** Full treatment in
-[`course/10-ww4-and-the-future.md`](course/10-ww4-and-the-future.md).
+[`course/14-ww4-and-the-future.md`](course/14-ww4-and-the-future.md).
 
 - **[NOAA-EMC/WW4](https://github.com/NOAA-EMC/WW4)** `(v)` — "Home of the WAVEWATCH IV ™
   (WW4 ™) third-generation wind wave modeling framework."
@@ -123,7 +123,7 @@ targets CPU and GPU efficiency in a code architected for it from the start.
 
 ## SWAN — the other one
 
-Full treatment in [`course/11-swan.md`](course/11-swan.md); build script at
+Full treatment in [`course/15-swan.md`](course/15-swan.md); build script at
 `scripts/04_get_swan.sh`.
 
 SWAN (Simulating WAves Nearshore), TU Delft. Same governing equation as WW3, deliberately
@@ -365,7 +365,7 @@ You asked for a list. Wave modelling splits into families that do genuinely diff
 
 | Model | Origin | Notes |
 |---|---|---|
-| **SWAN** | TU Delft | The other one everybody uses. Implicit, unconditionally stable, no CFL limit, plus a stationary mode — so it eats the high-resolution coastal domains that WW3's explicit propagation makes ruinous. Free. **See the dedicated section above** and `course/11-swan.md`. |
+| **SWAN** | TU Delft | The other one everybody uses. Implicit, unconditionally stable, no CFL limit, plus a stationary mode — so it eats the high-resolution coastal domains that WW3's explicit propagation makes ruinous. Free. **See the dedicated section above** and `course/15-swan.md`. |
 | **WAM (Cycle 4.x)** | ECMWF / WAMDI | The original third-gen model. WW3 and ECWAM both descend from it. |
 | **ECWAM** | ECMWF | WAM's operational descendant; produces the wave fields in ERA5 and IFS. Now open source as part of the ECMWF open IFS ecosystem. ⚠ check current licensing. |
 | **WWM-III** | Roland et al. | Wind Wave Model III, designed to be coupled tightly to **SCHISM** on unstructured grids. Strong choice for estuary/shelf work. |

@@ -1,5 +1,5 @@
 # A WW3 build environment. Deliberately CPU-only with gfortran -- see
-# course/09-gpu-and-performance.md for why a GPU image isn't the right
+# course/09-benchmark-profile-compile-run.md for why a GPU image isn't the right
 # first step.
 #
 #   docker build -t ww3-lab env/

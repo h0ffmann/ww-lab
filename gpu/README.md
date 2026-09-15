@@ -1,7 +1,7 @@
 # GPU sandbox
 
 Aimed at your RTX 4090. **Read
-[`../course/09-gpu-and-performance.md`](../course/09-gpu-and-performance.md) first** — it
+[`../course/09-benchmark-profile-compile-run.md`](../course/09-benchmark-profile-compile-run.md) first** — it
 explains why these are toy kernels rather than a WW3 port, and what the realistic
 expectation is.
 
