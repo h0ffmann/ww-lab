@@ -118,8 +118,11 @@ just translate            # pubs/proposal/en -> pt via any OpenAI-compatible end
 just pubs                 # all three
 ```
 
-The proposal is written in English under `pubs/proposal/en/`; `pubs/proposal/pt/` is generated
-and overwritten, so edit the English or the translator's prompt, never the Portuguese. The DEL
+The proposal is written in English under `pubs/proposal/en/`; `pubs/proposal/pt/` started as a
+machine translation and was then revised by hand (2026-09-15), so it is the reference Portuguese
+text. `just translate` only rewrites a `pt/` file when its English source changes (or with
+`--force`), which would discard that revision: after editing the English, port the change to the
+Portuguese by hand instead. The DEL
 section names are a fixed glossary in `scripts/translate_md.py`. Header fields (student, advisors,
 date) live in `pubs/proposal/meta.{pt,en}.yaml`. The LaTeX layout is the department's own
 proposal template (`pubs/proposal/template.tex`, styles under `pubs/proposal/shared/`).
