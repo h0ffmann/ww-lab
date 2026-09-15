@@ -61,7 +61,12 @@ gpu/03_precision
 
 # data you have to fetch yourself
 gebco.nc
-era5_winds.nc
+gfs_winds.nc
+examples/02-regional-real-forcing/gfs.*/
+
+# example helpers compiled by run.sh
+examples/01-fetch-limited-growth/make_inputs
+examples/02-regional-real-forcing/make_bathy
 
 # python
 __pycache__/

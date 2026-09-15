@@ -72,8 +72,8 @@ regtest test="ww3_tp1.1" ww3=ww3_src:
 # The simple regtest: build with the test's own switch_<sw>, then run it.
 rt test="ww3_tp1.1" sw="PR3_UQ" ww3=ww3_src: (build (ww3 + "/regtests/" + test + "/input/switch_" + sw) ww3) (regtest test ww3)
 
-# Run the first course example (fetch-limited growth, ~1 min) against <ww3>'s build.
-example01 ww3=ww3_src:
+# Run the first course example (fetch-limited growth, ~1 min) against <ww3>'s build; builds ww_fetch_analyse first.
+example01 ww3=ww3_src: (kokkos-build "openmp-release")
     cd examples/01-fetch-limited-growth && WW3="{{ww3}}" nix develop "{{pratico}}#ww3" --command bash run.sh
 
 # i9 vs 4090 benchmarks (kernel + real WW3 MPI scaling) against <ww3>'s build; builds ww_bench_case first.
