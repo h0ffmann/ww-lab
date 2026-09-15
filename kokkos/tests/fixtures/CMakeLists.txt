@@ -1,15 +1,36 @@
 # kokkos/tests/fixtures/CMakeLists.txt
 # The Fortran side of the L1 parity fixtures: the standalone W3SNL1/INSNL1
-# reference and the generator that streams its answers into the committed
-# snl1_nk25_nth24.bin. Nothing here is built into ww_kokkos -- it only ever runs
-# when a human regenerates the fixture (`just snl1-fixtures`).
+# reference, the shared sea state, the generator that streams the reference's
+# answers into the committed snl1_nk25_nth24.bin, and the shim round-trip driver.
+# Nothing here is built into ww_kokkos. The generator only ever runs when a human
+# regenerates the fixture (`just snl1-fixtures`); shim_driver is a CTest case.
 #
 # SPDX-License-Identifier: MIT
 
 set(WW_SNL1_FIXTURE ${CMAKE_CURRENT_SOURCE_DIR}/snl1_nk25_nth24.bin)
 
-add_executable(gen_snl1_fixture snl1_ref.F90 gen_snl1_fixture.F90)
+# The reference and the sea state are shared by two programs, so they are a
+# library: two executables compiling the same .F90 would race to write the same
+# .mod file into the same directory, and Ninja refuses that outright.
+add_library(snl1_ref STATIC snl1_ref.F90 snl1_sea_state.F90)
+set_target_properties(snl1_ref PROPERTIES
+    Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mod)
+target_include_directories(snl1_ref PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/mod)
+ww_apply_warnings(snl1_ref)
+
+add_executable(gen_snl1_fixture gen_snl1_fixture.F90)
+target_link_libraries(gen_snl1_fixture PRIVATE snl1_ref)
 ww_apply_warnings(gen_snl1_fixture)
+
+# The round trip of Task 4: a Fortran program that reaches the Kokkos kernel only
+# through W3KOKKOSMD and the bind(C) shim, and checks the answer against the same
+# W3SNL1_REF the fixture is made of. It is a test, not a generator, so it is part
+# of ALL and of CTest.
+add_executable(shim_driver shim_driver.F90)
+target_link_libraries(shim_driver PRIVATE snl1_ref ww_kokkos_f)
+ww_apply_warnings(shim_driver)
+add_test(NAME shim_roundtrip COMMAND shim_driver)
+set_tests_properties(shim_roundtrip PROPERTIES ENVIRONMENT "${WW_TEST_ENVIRONMENT}")
 
 # Not part of ALL and not a test: regenerating rewrites a committed file, which
 # must be a deliberate act with a reviewable diff.

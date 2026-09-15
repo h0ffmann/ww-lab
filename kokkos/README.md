@@ -25,10 +25,12 @@ CMakePresets.json     serial-debug, openmp-release, cuda-release
 cmake/                CompilerWarnings.cmake -- the one warning policy
 src/ww_kokkos/        real.hpp (float32 + helpers), spectrum_fixtures.hpp (JONSWAP, cos^2),
                       snl1_{config,tables,dia} (the DIA port), fixture_io (fixture reader)
-src/fortran_iface/    bind(C) interface module and shim          (Task 4)
+src/fortran_iface/    ww_kokkos_c.hpp + snl1_shim.cpp (the C ABI, built into ww_kokkos),
+                      w3kokkosmd.F90 (the Fortran module), PATCH.md (the WW3 caller)
 intro/                01..06, one Kokkos concept each, each a CTest case
 tests/                kokkos_env.hpp (runtime lifetime) + L1_* GoogleTest suites
-tests/fixtures/       the verbatim Fortran reference + the committed binary fixtures
+tests/fixtures/       the verbatim Fortran reference, the shared sea state, the committed
+                      binary fixtures and shim_driver.F90 (the shim_roundtrip CTest case)
 tools/nccmp-tol/      per-field NetCDF comparator                (Task 5)
 tools/bench_case/     benchmark-case generator                   (Task 6)
 tools/fetch_analyse/  fetch-growth analyser                      (Task 6)
@@ -111,6 +113,8 @@ replay a whole WW3 regtest.
 | `L1_test_intro` | the lesson material's invariants |
 | `L1_test_snl1_tables` | `make_tables` against `INSNL1`: all 32 address tables exactly, the weights and `AF11` to 1e-6 relative |
 | `L1_test_snl1_dia` | `snl1` against `W3SNL1` to 1e-5 relative; plus zero-in/zero-out, the cubic scaling of `Snl`, and launch-to-launch bit-reproducibility |
+| `L1_test_snl1_shim` | the same parity through the raw C ABI, plus the error paths: call before init, negative `npts`, null pointers, buffer growth, idempotent init |
+| `shim_roundtrip` | a Fortran program (`tests/fixtures/shim_driver.F90`) calling `W3KOKKOSMD` → shim → kernel and comparing with `W3SNL1_REF` in the same process |
 
 Kernels live in free functions rather than in `TEST()` bodies: nvcc rejects an
 extended lambda inside a private member function, and a `TEST()` body is one.
@@ -149,5 +153,33 @@ does not exist; the CMake guard detects exactly that and skips the target with a
 warning. Running it needs a WW3 built with an `NL1` switch, e.g.
 `just build switches/switch_lab_shrd`. Until then the committed fixture, generated
 from the standalone reference, is the sole source of truth.
+
+## The bind(C) boundary
+
+`src/fortran_iface/` is how WAVEWATCH III reaches the kernels. Three files and one
+rule each:
+
+| file | rule |
+|---|---|
+| `ww_kokkos_c.hpp` | the C ABI: `float` (WW3's default `REAL`), Fortran-ordered, caller-owned arrays, and no function that can throw |
+| `snl1_shim.cpp` | ownership (finalize only a Kokkos *we* started), lifetime (a `push_finalize_hook` drops the Views before `Kokkos::finalize`), and errors (every entry point is a `try`/`catch` that records a code) |
+| `w3kokkosmd.F90` | `MODULE W3KOKKOSMD`: one `ISO_C_BINDING` interface block per C declaration, plus `LOGICAL :: KOKKOS_SNL1` |
+
+The C++ half is compiled into `ww_kokkos` unconditionally, so the shim is testable
+with no Fortran compiler in the loop; only `w3kokkosmd.F90` needs
+`WW_ENABLE_FORTRAN`, and it is built as its own target (`ww_kokkos_f`) because it
+is meant to be *copied into* `WW3/model/src`. Nothing in this repository modifies
+`WW3/`.
+
+Two switches, both read at `ww_kokkos_init()`:
+
+| variable | effect |
+|---|---|
+| `WW_KOKKOS_SNL1=1` | `ww_snl1_enabled()` returns 1, so `W3KOKKOS_SETUP` sets `KOKKOS_SNL1` and the patched `W3SRCE` calls the port instead of `W3SNL1` |
+| `WW_KOKKOS_DEVICE_ID` | which GPU to use (default 0). It is an environment variable and not `MPI_Comm_rank()` on purpose: phase 1 links no MPI, so `ww_kokkos_init(comm_f)` accepts the communicator and ignores it |
+
+`ww_snl1` is `void` because a Fortran `CALL` cannot read a return value; its status
+is `ww_snl1_last_error()`, and a caller that ignores it turns a failed launch into
+a plausible-looking wrong forecast.
 
 SPDX-License-Identifier: MIT

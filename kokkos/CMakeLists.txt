@@ -41,8 +41,8 @@ enable_testing()
 # suite from fighting CI for cores and keeps its output reproducible.
 set(WW_TEST_ENVIRONMENT "OMP_PROC_BIND=false;OMP_NUM_THREADS=2")
 
-# The portable kernel library. It carries no sources yet -- Task 3 adds the DIA
-# kernel; until then it exists to hand its include path, Kokkos and the
+# The portable kernel library: the ported kernels plus the bind(C) shim that
+# WAVEWATCH III reaches them through. It hands its include path, Kokkos and the
 # WW_DETERMINISTIC contract to everything that links it.
 add_library(ww_kokkos STATIC)
 # With only headers in target_sources(), CMake cannot infer a link language yet.
@@ -55,9 +55,9 @@ if(WW_DETERMINISTIC)
 endif()
 
 add_subdirectory(src/ww_kokkos)
-if(WW_ENABLE_FORTRAN)
-  add_subdirectory(src/fortran_iface)
-endif()
+# Not guarded by WW_ENABLE_FORTRAN: the C ABI is C++ and belongs in ww_kokkos
+# either way. The directory guards the Fortran module itself.
+add_subdirectory(src/fortran_iface)
 add_subdirectory(intro)
 add_subdirectory(tools/nccmp-tol)
 add_subdirectory(tools/bench_case)

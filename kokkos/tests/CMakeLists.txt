@@ -20,6 +20,8 @@ endfunction()
 ww_add_test(L1_test_intro)
 ww_add_test(L1_test_snl1_tables)
 ww_add_test(L1_test_snl1_dia)
+ww_add_test(L1_test_snl1_shim)
+
 
 # The Fortran reference and the fixture generator. Not needed to run the tests --
 # the fixture they produce is committed -- only to regenerate it.

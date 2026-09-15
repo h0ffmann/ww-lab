@@ -8,7 +8,9 @@
 !> `ww::fixture::load()` reads it back.
 !>
 !> Nothing here is random and nothing is read from the environment: the same
-!> compiler flags must reproduce the same bytes.
+!> compiler flags must reproduce the same bytes. The grid, the dispersion solve
+!> and the spectrum itself live in SNL1_SEA_STATE so that shim_driver.F90 replays
+!> exactly this sea state through the bind(C) shim.
 !>
 !> Usage: gen_snl1_fixture <output-path>
 !>
@@ -16,18 +18,11 @@
 !>
 PROGRAM GEN_SNL1_FIXTURE
   USE SNL1_REF
+  USE SNL1_SEA_STATE
   IMPLICIT NONE
   !
-  INTEGER, PARAMETER :: NK_USE   = 25
-  INTEGER, PARAMETER :: NTH_USE  = 24
-  INTEGER, PARAMETER :: NPTS     = 3
+  INTEGER, PARAMETER :: NPTS     = NPTS_REF
   INTEGER, PARAMETER :: MAGIC    = INT(z'534E4C31')   ! 'SNL1'
-  REAL,    PARAMETER :: XFR_USE  = 1.1
-  REAL,    PARAMETER :: FREQ1    = 0.04118
-  REAL,    PARAMETER :: U10      = 10.0               ! m/s
-  REAL,    PARAMETER :: FETCH    = 1.0E5              ! m
-  REAL,    PARAMETER :: GAMMA_J  = 3.3
-  REAL,    PARAMETER :: DEPTHS(NPTS) = (/ 1000., 50., 10. /)
   !
   CHARACTER(LEN=512)  :: PATH
   INTEGER             :: UNIT, IPT
@@ -48,7 +43,7 @@ PROGRAM GEN_SNL1_FIXTURE
     STOP 2
   END IF
   !
-  CALL SETUP_REF ( NK_USE, NTH_USE, XFR_USE, FREQ1 )
+  CALL SETUP_REF ( NK_REF, NTH_REF, XFR_REF, FREQ1 )
   CALL INSNL1_REF
   !
   ALLOCATE ( A(NSPEC), S(NSPEC), D(NSPEC), CG(NK), WN(NK) )
@@ -97,84 +92,5 @@ PROGRAM GEN_SNL1_FIXTURE
   !
   DEALLOCATE ( A, S, D, CG, WN )
   CALL FREE_REF
-  !
-CONTAINS
-  !/ ------------------------------------------------------------------- /
-  !> @brief Wavenumber and group velocity of the linear dispersion relation.
-  !>
-  !> Solves sigma^2 = g k tanh(k d) by 20 Newton steps from the deep-water
-  !> guess, then CG = 0.5 (1 + 2kd/sinh(2kd)) sigma / k.
-  !>
-  SUBROUTINE DISPERSION ( DEPTH, WNO, CGO )
-    IMPLICIT NONE
-    REAL, INTENT(IN)  :: DEPTH
-    REAL, INTENT(OUT) :: WNO(NK), CGO(NK)
-    INTEGER           :: IK, IT
-    REAL              :: SI, K, KD, F, FP
-    DO IK=1, NK
-      SI = SIG(IK)
-      K  = SI*SI / GRAV
-      DO IT=1, 20
-        KD = MIN ( K*DEPTH, 30. )
-        F  = GRAV*K*TANH(KD) - SI*SI
-        FP = GRAV*TANH(KD) + GRAV*K*DEPTH/COSH(KD)**2
-        K  = K - F/FP
-      END DO
-      KD      = MIN ( K*DEPTH, 30. )
-      WNO(IK) = K
-      CGO(IK) = 0.5 * ( 1. + 2.*KD/SINH(2.*KD) ) * SI / K
-    END DO
-  END SUBROUTINE DISPERSION
-  !/ ------------------------------------------------------------------- /
-  !> @brief JONSWAP x cos^2 action spectrum and its energy-weighted mean kd.
-  !>
-  SUBROUTINE SEA_STATE ( DEPTH, WNI, AO, KDM )
-    IMPLICIT NONE
-    REAL, INTENT(IN)  :: DEPTH, WNI(NK)
-    REAL, INTENT(OUT) :: AO(NSPEC), KDM
-    INTEGER           :: IK, ITH, ISP
-    REAL              :: XT, ALPHA, FP, SP, SI, SA, R, PM, EF
-    REAL              :: TH, DD, SPREAD, DSIG, EBAND, ESUM, KDSUM
-    !
-    XT    = GRAV * FETCH / U10**2
-    ALPHA = 0.076 * XT**(-0.22)
-    FP    = 3.5 * ( GRAV / U10 ) * XT**(-0.33)
-    SP    = TPI * FP
-    !
-    ESUM  = 0.
-    KDSUM = 0.
-    DO IK=1, NK
-      SI    = SIG(IK)
-      IF ( SI <= SP ) THEN
-        SA = 0.07
-      ELSE
-        SA = 0.09
-      END IF
-      R     = EXP ( -(SI-SP)**2 / (2.*(SA*SP)**2) )
-      PM    = ALPHA * GRAV**2 * SI**(-5) * EXP ( -1.25 * (SP/SI)**4 )
-      EF    = PM * GAMMA_J**R
-      DSIG  = SI * ( XFR - 1./XFR ) * 0.5
-      EBAND = 0.
-      DO ITH=1, NTH
-        TH = REAL(ITH-1) * DTH
-        DD = TH
-        DO WHILE ( DD >  PI ) ; DD = DD - TPI ; END DO
-        DO WHILE ( DD < -PI ) ; DD = DD + TPI ; END DO
-        IF ( ABS(DD) >= 0.5*PI ) THEN
-          SPREAD = 0.
-        ELSE
-          SPREAD = ( 2. / PI ) * COS(DD)**2
-        END IF
-        ISP     = ITH + (IK-1)*NTH
-        AO(ISP) = EF * SPREAD / SI
-        EBAND   = EBAND + EF * SPREAD * DTH * DSIG
-      END DO
-      ESUM  = ESUM  + EBAND
-      KDSUM = KDSUM + EBAND * WNI(IK) * DEPTH
-    END DO
-    !
-    KDM = KDSUM / ESUM
-    !
-  END SUBROUTINE SEA_STATE
   !
 END PROGRAM GEN_SNL1_FIXTURE
