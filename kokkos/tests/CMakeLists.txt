@@ -22,6 +22,14 @@ ww_add_test(L1_test_snl1_tables)
 ww_add_test(L1_test_snl1_dia)
 ww_add_test(L1_test_snl1_shim)
 
+# Not a test: the timing harness behind the ms/call numbers in kokkos/PORT_STATUS.md.
+# It runs the same shim entry point WW3 would, so what it measures is the phase-1
+# cost a caller actually pays -- copy-in, kernel, copy-out -- not just the kernel.
+add_executable(ww_bench_snl1 bench_snl1.cpp)
+target_link_libraries(ww_bench_snl1 PRIVATE ww_kokkos)
+target_compile_definitions(ww_bench_snl1 PRIVATE
+    WW_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
+ww_apply_warnings(ww_bench_snl1)
 
 # The Fortran reference and the fixture generator. Not needed to run the tests --
 # the fixture they produce is committed -- only to regenerate it.

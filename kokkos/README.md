@@ -28,9 +28,10 @@ src/ww_kokkos/        real.hpp (float32 + helpers), spectrum_fixtures.hpp (JONSW
 src/fortran_iface/    ww_kokkos_c.hpp + snl1_shim.cpp (the C ABI, built into ww_kokkos),
                       w3kokkosmd.F90 (the Fortran module), PATCH.md (the WW3 caller)
 intro/                01..06, one Kokkos concept each, each a CTest case
-tests/                kokkos_env.hpp (runtime lifetime) + L1_* GoogleTest suites
+tests/                kokkos_env.hpp (runtime lifetime), L1_* GoogleTest suites, bench_snl1.cpp
 tests/fixtures/       the verbatim Fortran reference, the shared sea state, the committed
                       binary fixtures and shim_driver.F90 (the shim_roundtrip CTest case)
+PORT_STATUS.md        the port ledger: phase, parity and ms/call per routine
 tools/nccmp-tol/      per-field NetCDF comparator                (Task 5)
 tools/bench_case/     benchmark-case generator                   (Task 6)
 tools/fetch_analyse/  fetch-growth analyser                      (Task 6)
@@ -168,8 +169,9 @@ rule each:
 The C++ half is compiled into `ww_kokkos` unconditionally, so the shim is testable
 with no Fortran compiler in the loop; only `w3kokkosmd.F90` needs
 `WW_ENABLE_FORTRAN`, and it is built as its own target (`ww_kokkos_f`) because it
-is meant to be *copied into* `WW3/model/src`. Nothing in this repository modifies
-`WW3/`.
+is meant to be *copied into* `WW3/model/src` — which is what
+`src/fortran_iface/PATCH.md` describes, hunk by hunk, with real line numbers.
+Nothing in this repository modifies `WW3/`.
 
 Two switches, both read at `ww_kokkos_init()`:
 
@@ -181,5 +183,12 @@ Two switches, both read at `ww_kokkos_init()`:
 `ww_snl1` is `void` because a Fortran `CALL` cannot read a return value; its status
 is `ww_snl1_last_error()`, and a caller that ignores it turns a failed launch into
 a plausible-looking wrong forecast.
+
+## Timing
+
+`tests/bench_snl1.cpp` builds `ww_bench_snl1` (not a CTest case): 1 000 sea points,
+20 calls, timed both end-to-end through `ww_snl1()` and with everything already on
+the device. The numbers, the machine they were measured on and what they do *not*
+mean are in [`PORT_STATUS.md`](PORT_STATUS.md).
 
 SPDX-License-Identifier: MIT
