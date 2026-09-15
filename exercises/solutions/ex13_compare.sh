@@ -37,7 +37,20 @@ mkdir -p "$OUT"
 [ -d "$WW3DIR/regtests/$TEST/work_lab" ] || { echo "!! no work_lab for $TEST -- run: just rt $TEST"; exit 1; }
 
 echo "############ L2 replay of $TEST"
+# L2_replay.sh exits 1 when a judged field is outside tolerance -- that is a
+# verdict, and the one this exercise exists to read, not an error. Capture the
+# status instead of letting pipefail abort here; 2 (I/O) and anything else
+# (missing tool, crash) are real failures.
+set +e
 bash "$REPLAY" "$WW3DIR" "$TEST" 2>&1 | tee "$OUT/replay.log"
+rc=${PIPESTATUS[0]}
+set -e
+case "$rc" in
+  0) echo ">> replay finished: every judged field inside tolerance (exit 0)" ;;
+  1) echo ">> replay finished: at least one judged field OUTSIDE tolerance (exit 1)" ;;
+  *) echo "!! L2_replay.sh failed with exit $rc (2 = I/O error, else a missing tool or a crash) -- see $OUT/replay.log"
+     exit 1 ;;
+esac
 
 [ -f "$STATUS" ] || { echo "!! $STATUS was not written -- see $OUT/replay.log"; exit 1; }
 
@@ -51,14 +64,16 @@ echo "############ what PORT_STATUS.md now says"
 cat "$OUT/l2_table.md"
 
 # One-line verdict: nccmp-tol prints pass/FAIL per judged variable (see
-# kokkos/tools/nccmp-tol/README.md); count them in the section we just cut out.
-n_pass=$(grep -ciE '(^|[| ])pass([| ]|$)' "$OUT/l2_table.md" || true)
-n_fail=$(grep -ciE '(^|[| ])fail([| ]|$)' "$OUT/l2_table.md" || true)
+# kokkos/tools/nccmp-tol/README.md). Count only TABLE ROWS whose verdict cell
+# says so -- a `|`-led line ending in a pass/fail cell -- not the section
+# heading or the summary line, which repeat the word.
+n_pass=$(grep -ciE '^\|.*\|[[:space:]]*pass[[:space:]]*(\||$)' "$OUT/l2_table.md" || true)
+n_fail=$(grep -ciE '^\|.*\|[[:space:]]*fail[[:space:]]*(\||$)' "$OUT/l2_table.md" || true)
 echo
-if [ "$n_fail" -eq 0 ] && [ "$n_pass" -gt 0 ]; then
-  echo "ex13: $n_pass judged field(s) inside tolerance, none outside -- parity holds for $TEST"
-elif [ "$n_fail" -gt 0 ]; then
+if [ "$rc" -eq 1 ] || [ "$n_fail" -gt 0 ]; then
   echo "ex13: $n_fail judged field(s) OUTSIDE tolerance ($n_pass inside) -- read the max_rel column and lesson 12's tolerance discussion"
+elif [ "$n_pass" -gt 0 ]; then
+  echo "ex13: $n_pass judged field(s) inside tolerance, none outside -- parity holds for $TEST"
 else
-  echo "ex13: could not find pass/fail verdicts in the table -- read $OUT/l2_table.md by hand"
+  echo "ex13: replay exited 0 but no per-field verdict rows were found -- read $OUT/l2_table.md by hand"
 fi
