@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ww-lab-tool-setup — wire nix-config into a consumer repo (ww-lab) as a git submodule with
+# ww-lab-tool-setup — wire nix-config into a consumer repo (ww3-gpu) as a git submodule with
 # only labs/pratico checked out. Git cannot submodule a subdirectory, so the submodule points
 # at the whole repo and sparse-checkout keeps everything but labs/pratico off disk.
 #

@@ -12,7 +12,7 @@ Text with `code`, formula $E = m c^2$ and a block:
 just rt ww3_tp1.1
 ```
 
-See [the repository](https://github.com/h0ffmann/ww-lab) and the citation [@ikuyajolu2023, p. 3].
+See [the repository](https://github.com/h0ffmann/ww3-gpu) and the citation [@ikuyajolu2023, p. 3].
 
 $$\\frac{\\partial N}{\\partial t} = S$$
 

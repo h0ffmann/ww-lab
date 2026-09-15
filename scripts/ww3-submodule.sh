@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
-# ww3-submodule — keep a fork of NOAA-EMC/WW3 as a submodule of ww-lab, and keep that fork
-# moving with upstream. The fork is the pin ww-lab builds against; upstream is where the
+# ww3-submodule — keep a fork of NOAA-EMC/WW3 as a submodule of ww3-gpu, and keep that fork
+# moving with upstream. The fork is the pin ww3-gpu builds against; upstream is where the
 # real development (and its pull requests) happens.
 #
 #   scripts/ww3-submodule.sh ~/code/ww-lab                    # add the fork as ./WW3 (or init it)
 #   scripts/ww3-submodule.sh ~/code/ww-lab --sync --push      # fork <- upstream/develop, push fork
-#   scripts/ww3-submodule.sh ~/code/ww-lab --bump --commit    # ww-lab pin -> latest fork branch
+#   scripts/ww3-submodule.sh ~/code/ww-lab --bump --commit    # ww3-gpu pin -> latest fork branch
 #   scripts/ww3-submodule.sh ~/code/ww-lab --pr 1234          # check out upstream PR #1234 in WW3/
 #   scripts/ww3-submodule.sh ~/code/ww-lab --sync --push --bump --commit   # the usual refresh
 #
 # Options
 #   --fork <url>      your fork (default git@github.com:h0ffmann/WW3.git) — the submodule's origin
 #   --upstream <url>  the original (default https://github.com/NOAA-EMC/WW3.git) — remote "upstream"
-#   --path <dir>      submodule directory in ww-lab (default WW3)
+#   --path <dir>      submodule directory in ww3-gpu (default WW3)
 #   --branch <name>   branch to track on both (default develop, WW3's integration branch)
 #   --sync            fast-forward the fork's <branch> to upstream/<branch> (no merge commits;
 #                     if the fork has its own commits, use --merge to merge upstream in)
 #   --merge           with --sync: merge upstream instead of fast-forwarding
 #   --push            with --sync: push the updated branch to the fork
 #   --pr <n>          fetch upstream pull request <n> and check it out (detached) — pinning
-#                     ww-lab to a PR that is not merged yet; --commit records it
+#                     ww3-gpu to a PR that is not merged yet; --commit records it
 #   --bump            move the pin to origin/<branch> of the fork
-#   --commit          commit .gitmodules and the new pin in ww-lab
+#   --commit          commit .gitmodules and the new pin in ww3-gpu
 #
 # Idempotent: rerun after a fresh clone (initialises the submodule), rerun to refresh.
 set -euo pipefail
@@ -65,7 +65,7 @@ git -C "$target" rev-parse --show-toplevel >/dev/null 2>&1 \
 root="$(git -C "$target" rev-parse --show-toplevel)"
 sub="$root/$path"
 short() { git -C "$sub" rev-parse --short "$1"; }
-# The pin ww-lab has committed for the submodule (what a bump is measured against), if any.
+# The pin ww3-gpu has committed for the submodule (what a bump is measured against), if any.
 pinned() { git -C "$root" rev-parse --short "HEAD:$path" 2>/dev/null || short HEAD; }
 
 # 1. The submodule: the fork is origin. Full history on purpose — --sync needs it to
@@ -111,7 +111,7 @@ if [ "$sync" -eq 1 ]; then
     fi
 fi
 
-# 4. Where ww-lab's pin goes: an upstream PR head, or the fork's branch tip.
+# 4. Where ww3-gpu's pin goes: an upstream PR head, or the fork's branch tip.
 if [ -n "$pr" ]; then
     git -C "$sub" fetch --quiet upstream "refs/pull/$pr/head:refs/remotes/upstream/pr/$pr"
     git -C "$sub" checkout --quiet --detach "upstream/pr/$pr"
@@ -128,7 +128,7 @@ elif [ "$bump" -eq 1 ]; then
     fi
 fi
 
-# 5. Record it in ww-lab.
+# 5. Record it in ww3-gpu.
 git -C "$root" add .gitmodules "$path"
 if [ "$commit" -eq 1 ]; then
     if git -C "$root" diff --cached --quiet; then
