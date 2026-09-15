@@ -15,7 +15,9 @@
 !>
 !>     IERR = WW_KOKKOS_INIT ( -1 )          ! once per process, W3INIT
 !>     CALL W3KOKKOS_SETUP                   ! sets KOKKOS_SNL1
-!>     IERR = WW_SNL1_INIT ( NK, NTH, ... )  ! once per grid, after the mod_def read
+!>     IERR = WW_SNL1_INIT ( NK, NTH, ..., SIG(1) )
+!>                                           ! once per process -- ONE grid; note
+!>                                           ! SIG(1), not SIG (see remark 4)
 !>     CALL WW_SNL1 ( NPTS, A, CG, KDMEAN, S, D )   ! per source-term call
 !>     ...
 !>     CALL WW_KOKKOS_FINALIZE               ! once, at W3WAVE teardown
@@ -72,6 +74,27 @@ MODULE W3KOKKOSMD
   !     address of the first element and the Fortran column-major order is kept.
   !     A(NSPEC,NPTS), CG(NK,NPTS), KDMEAN(NPTS), S(NSPEC,NPTS), D(NSPEC,NPTS).
   !
+  !     Assumed-size dummies also mean the *lower bound of the actual argument is
+  !     lost*. W3GDATMD allocates SIG(0:MK+1) (w3gdatmd.F90:2066), so passing the
+  !     bare name SIG to WW_SNL1_INIT hands over SIG(0) and builds every
+  !     quadruplet one frequency bin low. Pass SIG(1), which is WW3's own idiom.
+  !     The same applies to any array whose lower bound is not 1; CG1 inside
+  !     W3SRCE is declared CG1(NK) and is safe.
+  !
+  !     Three limits of phase 1, all from the shim holding one context:
+  !
+  !       a) One spectral grid per process. WW_SNL1_INIT replaces the previous
+  !          grid's tables rather than adding a second grid, so a ww3_multi run
+  !          must not call it once per grid -- with different NK*NTH the later
+  !          grids would read out of bounds. The caller must refuse that case.
+  !       b) One caller at a time. Nothing in the shim is locked, so concurrent
+  !          WW_SNL1 calls are undefined behaviour. W3SRCE is called from inside
+  !          !$OMP PARALLEL regions under W3_OMPG and W3_OMP0, so a phase-1
+  !          caller either serialises the call (!$OMP CRITICAL) or runs without
+  !          those switches. See PATCH.md.
+  !       c) Every call copies host->device and back, so calling it once per sea
+  !          point pays that cost once per sea point. Phase 2 removes it.
+  !
   !/ ------------------------------------------------------------------- /
   USE, INTRINSIC :: ISO_C_BINDING, ONLY: C_INT, C_FLOAT
   !
@@ -107,7 +130,9 @@ MODULE W3KOKKOSMD
      END SUBROUTINE WW_KOKKOS_FINALIZE
      !
      !> Build the INSNL1 quadruplet tables for one spectral grid. SIG is
-     !> SIG(1:NK) and is copied. Returns 0 on success.
+     !> SIG(1:NK) -- pass SIG(1), not SIG, when the actual argument's lower
+     !> bound is 0 -- and is copied. One grid per process in phase 1: a second
+     !> call replaces the first grid's tables. Returns 0 on success.
      INTEGER(C_INT) FUNCTION WW_SNL1_INIT                                &
           ( NK, NTH, XFR, DTH, LAM, SNLC1, KDCON, KDMN,                  &
             SNLS1, SNLS2, SNLS3, FACHFE, SIG )                           &

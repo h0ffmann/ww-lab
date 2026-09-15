@@ -17,6 +17,24 @@
 // so the signature does not have to change in phase 2, and picks the device from
 // the environment. See the comment on ww_kokkos_init().
 //
+// Three limits of phase 1, all of them consequences of the shim holding exactly
+// one set of tables and one set of device buffers in a file-static context:
+//
+//  * **One spectral grid per process.** ww_snl1_init() *replaces* the previous
+//    grid's tables; it does not add a second grid. A ww3_multi run with two grids
+//    of different NK/NTH would compute the second grid's spectra with the first
+//    grid's nspec, which is an out-of-bounds read, not a wrong number. The caller
+//    must refuse that configuration -- see PATCH.md, the W3INIT hunk.
+//  * **One caller at a time.** Nothing here is locked. Two threads inside
+//    ww_snl1() share the context, and one of them may be reallocating the device
+//    buffers while the other copies into them. Concurrent calls are undefined
+//    behaviour, and WW3 *does* call W3SRCE from inside an !$OMP PARALLEL region
+//    under W3_OMPG and W3_OMP0 -- so the caller patch has to serialise or the
+//    switch file has to leave those out.
+//  * **The caller owns the batching.** Phase 1 copies host->device and back on
+//    every call, so calling it once per sea point pays that cost once per sea
+//    point.
+//
 // SPDX-License-Identifier: MIT
 #pragma once
 
@@ -35,8 +53,8 @@ enum WwKokkosStatus {
 /// Start the Kokkos runtime, if nobody else has. Returns WW_KOKKOS_OK or
 /// WW_KOKKOS_ERR_RUNTIME.
 ///
-/// Idempotent: calling it again is a no-op that still returns WW_KOKKOS_OK, which
-/// is what a multi-grid WW3 run needs -- W3INIT runs once per grid.
+/// Idempotent: calling it again is a no-op that still returns WW_KOKKOS_OK, so a
+/// caller that cannot easily tell whether it has already run may just call it.
 ///
 /// Ownership: if Kokkos is already live when this is called, the shim records
 /// that it did *not* start it and ww_kokkos_finalize() will leave it running.
@@ -59,9 +77,19 @@ int ww_kokkos_init(int comm_f);
 /// WW_KOKKOS_ERR_NOT_INITIALISED until ww_snl1_init() runs again.
 void ww_kokkos_finalize(void);
 
-/// Build the INSNL1 quadruplet tables for one spectral grid. Call once per grid,
-/// after ww_kokkos_init(). The arguments are W3GDATMD's, under WW3's own names;
-/// `sig` is SIG(1:nk) on the host and is copied, not borrowed.
+/// Build the INSNL1 quadruplet tables for one spectral grid. Call once, after
+/// ww_kokkos_init(). The arguments are W3GDATMD's, under WW3's own names.
+///
+/// `sig` is **SIG(1:nk)**: the pointer must address the *first* frequency bin and
+/// the shim reads `nk` floats from it. This matters because W3GDATMD allocates
+/// `SIG(0:MK+1)` (w3gdatmd.F90:2066) -- a Fortran caller that passes the bare
+/// array name to the assumed-size dummy hands over `&SIG(0)` and every quadruplet
+/// is then built one bin low. WW3's own idiom is to pass `SIG(1)`. The array is
+/// copied, not borrowed.
+///
+/// **Phase 1 keeps one grid per process.** A second call replaces the first
+/// grid's tables rather than adding to them, so a multi-grid run (`ww3_multi`)
+/// must not call this once per grid; see the header comment and PATCH.md.
 ///
 /// Returns WW_KOKKOS_OK, or WW_KOKKOS_ERR_BAD_SHAPE (nk <= 0, nth <= 0, null
 /// sig), WW_KOKKOS_ERR_NOT_INITIALISED (no live runtime) or WW_KOKKOS_ERR_RUNTIME.
@@ -77,8 +105,13 @@ int ww_snl1_init(int nk, int nth, float xfr, float dth, float lam, float snlc1,
 /// overwritten, not accumulated, exactly as in the Fortran.
 ///
 /// It is `void` because a Fortran CALL cannot inspect a return value; the outcome
-/// is in ww_snl1_last_error(). On any error `s` and `d` are left untouched.
-/// `npts == 0` is a legal no-op -- a WW3 rank may own no sea points.
+/// is in ww_snl1_last_error(). On a validation error -- before the kernel runs --
+/// nothing is written through `s` and `d`. `npts == 0` is a legal no-op: a WW3
+/// rank may own no sea points.
+///
+/// **Not thread-safe.** It reads and may reallocate one shared, unlocked context,
+/// so two concurrent calls are undefined behaviour. Batch the points into one
+/// call, or serialise the calls at the caller.
 void ww_snl1(int npts, const float* a, const float* cg, const float* kdmean, float* s,
              float* d);
 
@@ -91,12 +124,11 @@ int ww_snl1_enabled(void);
 /// one of the WwKokkosStatus codes otherwise. Every failure also prints one line
 /// to stderr.
 ///
-/// Thread-safety: the code is a single relaxed atomic, so a read never tears and
-/// never races the C++ standard's definition of a data race. It is still one
-/// value for the whole process -- with several threads in ww_snl1() at once, a
-/// non-zero code tells you that *some* call failed, not which. WW3 calls the
-/// source terms from one thread per grid point but only ever one shim call at a
-/// time per grid, so that is enough to fail the run loudly.
+/// The code is a single relaxed atomic, so reading it never tears and never races
+/// in the sense of the C++ memory model. That is *all* it provides: it does not
+/// make ww_snl1() thread-safe, and concurrent ww_snl1() calls are undefined
+/// behaviour whatever this returns. With a single caller -- the contract of
+/// phase 1 -- a non-zero code identifies the call that just failed.
 int ww_snl1_last_error(void);
 
 }  // extern "C"

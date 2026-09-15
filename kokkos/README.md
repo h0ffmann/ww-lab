@@ -184,6 +184,16 @@ Two switches, both read at `ww_kokkos_init()`:
 is `ww_snl1_last_error()`, and a caller that ignores it turns a failed launch into
 a plausible-looking wrong forecast.
 
+Three limits of phase 1, all of them consequences of the shim holding one
+file-static, unlocked context. They are the caller's problem, so `PATCH.md`
+handles each one explicitly:
+
+| limit | what goes wrong without it |
+|---|---|
+| one spectral grid per process | `ww_snl1_init` replaces the tables rather than adding a grid, so a `ww3_multi` run reads past the end of a later grid's spectra |
+| one caller at a time | `W3SRCE` runs inside an `!$OMP PARALLEL` region under `W3_OMPG`/`W3_OMP0`; two threads in `ww_snl1` race over the device buffers |
+| `sig` starts at bin 1 | the C dummy is assumed-size and `W3GDATMD` allocates `SIG(0:MK+1)`, so passing the bare name builds every quadruplet one frequency bin low |
+
 ## Timing
 
 `tests/bench_snl1.cpp` builds `ww_bench_snl1` (not a CTest case): 1 000 sea points,
