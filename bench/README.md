@@ -16,10 +16,42 @@ So this directory measures three separate, honest things:
 
 ```bash
 make run                                   # the kernel benchmarks
-python3 make_bench_case.py --size medium   # generate a WW3 case
+just bench-case --size medium -o bench/case_medium   # generate a WW3 case (from the repo root)
 bash bench_ww3_cpu.sh $WW3/build case_medium
-bash run_all.sh $WW3/build                 # or just do everything
+just bench                                 # or just do everything (builds the generator first)
 ```
+
+### The case generator
+
+`ww_bench_case` is a C++ program in `kokkos/tools/bench_case/`, built with the rest of
+the `kokkos/` tree (`just kokkos-build openmp-release` puts it at
+`kokkos/build/openmp-release/tools/bench_case/ww_bench_case`; `just bench-case …` builds
+and runs it in one go). It writes a complete run directory with no external data:
+
+```
+ww_bench_case [--size small|medium|large] [--nx N] [--ny N] [--nk N] [--nth N]
+              [--hours H] [--dx-km X] [-o DIR]
+```
+
+| size | grid | spectrum | hours | rough serial time |
+|---|---|---|---|---|
+| `small` | 120 × 80 | 24 × 24 | 12 | ~10 s |
+| `medium` | 300 × 200 | 32 × 36 | 24 | ~90 s |
+| `large` | 700 × 450 | 32 × 36 | 48 | ~15 min |
+
+The timesteps are derived from `--dx-km` through the CFL condition (`DTXY` rounded
+*down* to tens of seconds, `DTMAX = 3 DTXY`, `DTKTH = DTMAX/2`), so a resized case stays
+stable — and an unstable run does a different amount of work, which would make the
+benchmark lie. `case.json` records every derived number for the write-up.
+
+Field output is off (`DATE%FIELD` stride `'0'` in `ww3_shel.nml`) because the case
+times compute, not disk. To compare two runs field by field with
+[`nccmp-tol`](../kokkos/tools/nccmp-tol/), set that stride to `'3600'`, rerun `ww3_shel`
+and run `ww3_ounf` with the `ww3_ounf.nml` the generator also writes.
+
+The generator replaced a Python script; its `--size small` output is pinned byte for
+byte to that script's captured files by `kokkos/tests/L1_test_bench_case.cpp`, so
+numbers taken before and after the rewrite are comparable.
 
 ---
 

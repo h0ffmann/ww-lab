@@ -50,14 +50,12 @@ jobs:
           # it must still be valid standard Fortran with OpenMP.
           gfortran -O1 -fopenmp -c bench/hetero_split.f90 -o /dev/null || \
             echo "note: hetero_split needs nvfortran -acc -mp"
-
-      - name: Benchmark case generator runs
-        run: |
-          cd bench && python3 make_bench_case.py --size small -o /tmp/bc >/dev/null
-          test -f /tmp/bc/ww3_grid.nml && test -f /tmp/bc/case.json
-          echo "case generator ok"
           gfortran -O1 -std=f2018 -c gpu/02_do_concurrent.f90 -o /dev/null || \
             echo "note: 02_do_concurrent needs a compiler with F2018 LOCAL() support"
+
+      # The benchmark-case generator (kokkos/tools/bench_case) is C++ now and is
+      # covered by ctest in the `kokkos` job below (L1_test_bench_case pins its
+      # output byte for byte to the captured fixture), so it has no step here.
 
   kokkos:
     name: kokkos (serial-debug + openmp-release)

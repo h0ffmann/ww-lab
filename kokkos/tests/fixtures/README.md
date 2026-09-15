@@ -68,4 +68,23 @@ kernel then reads them at scratch slot `index + nth`.
 Reader: `kokkos/src/ww_kokkos/fixture_io.{hpp,cpp}` — the one place that knows
 this layout.
 
+## `bench_small/` — the benchmark-case generator's byte-equality fixture
+
+`kokkos/tools/bench_case/` replaced `bench/make_bench_case.py`. Before the Python
+was deleted it was run once, `python3 bench/make_bench_case.py --size small -o
+kokkos/tests/fixtures/bench_small`, and the six files it wrote (`depth.inp`,
+`mask.inp`, `namelists.nml`, `ww3_grid.nml`, `ww3_shel.nml`, `case.json`) are
+committed unchanged. `L1_test_bench_case` regenerates the small case into a
+temporary directory and compares every file byte for byte, so the C++ generator
+cannot drift from the numbers the Python produced.
+
+The seventh file, `ww3_ounf.nml`, is **not** from the Python — it never wrote one.
+It was produced by the C++ generator and is pinned here so that it, too, cannot
+change silently. The `.gitignore` rules for `depth.inp`/`mask.inp` are lifted for
+this directory only.
+
+There is nothing to regenerate: the fixture is a historical capture, and the test
+is what keeps the generator honest. If the case format has to change on purpose,
+the new files replace these in the same commit as the generator change.
+
 SPDX-License-Identifier: MIT

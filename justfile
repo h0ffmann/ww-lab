@@ -76,9 +76,13 @@ rt test="ww3_tp1.1" sw="PR3_UQ" ww3=ww3_src: (build (ww3 + "/regtests/" + test +
 example01 ww3=ww3_src:
     cd examples/01-fetch-limited-growth && WW3="{{ww3}}" nix develop "{{pratico}}#ww3" --command bash run.sh
 
-# i9 vs 4090 benchmarks (kernel + real WW3 MPI scaling) against <ww3>'s build.
-bench ww3=ww3_src:
+# i9 vs 4090 benchmarks (kernel + real WW3 MPI scaling) against <ww3>'s build; builds ww_bench_case first.
+bench ww3=ww3_src: (kokkos-build "openmp-release")
     bash bench/run_all.sh "{{ww3}}/build"
+
+# Generate a WW3 benchmark case, e.g. `just bench-case --size small -o bench/case_small` (see bench/README.md).
+bench-case *args: (kokkos-build "openmp-release")
+    "{{kokkos_dir}}/build/openmp-release/tools/bench_case/ww_bench_case" "$@"
 
 # Build the GPU sandbox (needs nvfortran; `just gpu CC_ARCH=cc90` for an H100).
 gpu *args:

@@ -26,3 +26,7 @@ ww_add_test(L1_test_snl1_dia)
 if(WW_ENABLE_FORTRAN)
   add_subdirectory(fixtures)
 endif()
+
+# Task 6: bench case generator
+ww_add_test(L1_test_bench_case)
+target_link_libraries(L1_test_bench_case PRIVATE bench_case_lib)
