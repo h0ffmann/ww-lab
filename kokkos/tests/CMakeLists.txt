@@ -26,3 +26,7 @@ ww_add_test(L1_test_snl1_dia)
 if(WW_ENABLE_FORTRAN)
   add_subdirectory(fixtures)
 endif()
+
+# Task 5: comparator
+ww_add_test(L1_test_nccmp_tol)
+target_link_libraries(L1_test_nccmp_tol PRIVATE nccmp_tol_lib)
