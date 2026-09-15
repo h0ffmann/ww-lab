@@ -59,6 +59,40 @@ jobs:
           gfortran -O1 -std=f2018 -c gpu/02_do_concurrent.f90 -o /dev/null || \
             echo "note: 02_do_concurrent needs a compiler with F2018 LOCAL() support"
 
+  kokkos:
+    name: kokkos (serial-debug + openmp-release)
+    runs-on: ubuntu-latest
+    steps:
+      # .gitmodules uses ssh URLs, which a runner cannot clone, so the submodule
+      # is fetched below over https instead of by the checkout action.
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Fetch the pratico toolchain submodule
+        run: |
+          git -c url.https://github.com/.insteadOf=git@github.com: \
+            submodule update --init --depth 1 nix-config
+
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: serial-debug (sanitizers)
+        run: |
+          nix develop ./nix-config/labs/pratico#ww3 --command bash -c '
+            cd kokkos &&
+            cmake --preset serial-debug &&
+            cmake --build --preset serial-debug &&
+            ctest --preset serial-debug'
+
+      - name: openmp-release
+        run: |
+          nix develop ./nix-config/labs/pratico#ww3 --command bash -c '
+            cd kokkos &&
+            cmake --preset openmp-release &&
+            cmake --build --preset openmp-release &&
+            ctest --preset openmp-release'
+
   links:
     name: markdown links
     runs-on: ubuntu-latest

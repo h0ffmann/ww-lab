@@ -182,3 +182,31 @@ translate *args:
 
 # Everything: book + proposal pt + proposal en (same as `nix build .`).
 pubs: book (proposal "pt") (proposal "en")
+
+# ---------------------------------------------------------------------
+# Kokkos (kokkos/): C++ kernels, intro programs and GoogleTest suites
+# ---------------------------------------------------------------------
+
+kokkos_dir := justfile_directory() + "/kokkos"
+
+# Configure kokkos/ with a preset: serial-debug (default), openmp-release, cuda-release (needs `just cuda` shell).
+kokkos-configure preset="serial-debug":
+    nix develop "{{pratico}}#ww3" --command cmake -S "{{kokkos_dir}}" --preset {{preset}}
+
+# Build a preset.
+kokkos-build preset="serial-debug": (kokkos-configure preset)
+    nix develop "{{pratico}}#ww3" --command cmake --build "{{kokkos_dir}}/build/{{preset}}"
+
+# Build and run ctest for a preset.
+kokkos-test preset="serial-debug": (kokkos-build preset)
+    nix develop "{{pratico}}#ww3" --command ctest --test-dir "{{kokkos_dir}}/build/{{preset}}" --output-on-failure
+
+# Configure, build and test the cuda-release preset in the CUDA shell (RTX 4090 / ADA89).
+kokkos-cuda-test:
+    nix develop "{{pratico}}#cuda" --command cmake -S "{{kokkos_dir}}" --preset cuda-release
+    nix develop "{{pratico}}#cuda" --command cmake --build "{{kokkos_dir}}/build/cuda-release"
+    nix develop "{{pratico}}#cuda" --command ctest --test-dir "{{kokkos_dir}}/build/cuda-release" --output-on-failure
+
+# Remove kokkos/build.
+kokkos-clean:
+    rm -rf "{{kokkos_dir}}/build"
