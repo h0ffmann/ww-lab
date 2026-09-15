@@ -16,19 +16,35 @@ producing plausible-looking noise.
 ## Run it
 
 ```bash
+just example01                  # from the repo root: builds ww_fetch_analyse, then runs run.sh in the toolchain shell
+```
+
+or by hand, inside `just ww3`:
+
+```bash
 export WW3=$HOME/src/WW3        # your clone, already built
-./run.sh
-python3 analyse.py ww3.nc
+./run.sh                        # compiles make_inputs.F90, runs the three WW3 programs, prints the table
+../../kokkos/build/openmp-release/tools/fetch_analyse/ww_fetch_analyse ww3.nc [u10]   # the table again
 ```
 
 ## What each step produces
 
 | Program | Reads | Writes |
 |---|---|---|
-| `make_inputs.py` | — | `depth.inp`, `mask.inp` |
+| `make_inputs` (from `make_inputs.F90`) | — | `depth.inp`, `mask.inp` |
 | `ww3_grid` | `ww3_grid.nml`, `namelists.nml`, the two ASCII files | **`mod_def.ww3`**, `mapsta.ww3`, `mask.ww3` |
 | `ww3_shel` | `ww3_shel.nml`, `mod_def.ww3` | `out_grd.ww3`, `restart.ww3`, `log.ww3` |
 | `ww3_ounf` | `ww3_ounf.nml`, `mod_def.ww3`, `out_grd.ww3` | `ww3*.nc` |
+| `ww_fetch_analyse` | `ww3.nc` | a table on stdout: WW3 `Hs` vs Kahma & Calkoen (1992) along the centre row, and the Pierson–Moskowitz limit |
+
+`make_inputs.F90` is fifty lines of Fortran with three parameters at the top (`nx`,
+`ny`, `depth_m`); `run.sh` recompiles it when the source is newer than the binary, so
+edit-and-rerun works. `ww_fetch_analyse` lives in
+[`kokkos/tools/fetch_analyse/`](../../kokkos/tools/fetch_analyse/) and reads the file with
+netcdf-c: last time step (steady state), centre row (away from the edges), `x` or
+`longitude` as the fetch axis. Its second argument is `U10` and must match
+`HOMOG_INPUT(1)%VALUE1` in `ww3_shel.nml`. There is no plot; `ncview ww3.nc` or
+`cdo outputtab,value -selname,hs ww3.nc` if you want to look at the field.
 
 `mod_def.ww3` is the thing to understand. It's an opaque binary blob containing the whole
 model definition — grid, spectral discretisation, timesteps, physics configuration. Every

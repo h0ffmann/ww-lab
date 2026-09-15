@@ -6,7 +6,7 @@ real treasure and are far better than anything I could write from scratch.
 | Dir | What | Needs external data? |
 |---|---|---|
 | `01-fetch-limited-growth/` | Cartesian box, flat bottom, constant wind. Compares against the classic empirical growth laws. | No |
-| `02-regional-real-forcing/` | 0.1° spherical grid off southern Brazil, GEBCO bathymetry, ERA5 winds, partitioned + spectral output. | Yes (GEBCO, ERA5) |
+| `02-regional-real-forcing/` | 0.1° spherical grid off southern Brazil, GEBCO bathymetry, GFS winds from NOMADS, partitioned + spectral output. | Yes (GEBCO; GFS via `get_gfs.sh`) |
 
 Start with 01. It runs in a minute and has an analytic answer, so if it's wrong you know
 your build is wrong rather than your configuration.

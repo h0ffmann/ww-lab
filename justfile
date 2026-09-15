@@ -72,13 +72,17 @@ regtest test="ww3_tp1.1" ww3=ww3_src:
 # The simple regtest: build with the test's own switch_<sw>, then run it.
 rt test="ww3_tp1.1" sw="PR3_UQ" ww3=ww3_src: (build (ww3 + "/regtests/" + test + "/input/switch_" + sw) ww3) (regtest test ww3)
 
-# Run the first course example (fetch-limited growth, ~1 min) against <ww3>'s build.
-example01 ww3=ww3_src:
+# Run the first course example (fetch-limited growth, ~1 min) against <ww3>'s build; builds ww_fetch_analyse first.
+example01 ww3=ww3_src: (kokkos-build "openmp-release")
     cd examples/01-fetch-limited-growth && WW3="{{ww3}}" nix develop "{{pratico}}#ww3" --command bash run.sh
 
-# i9 vs 4090 benchmarks (kernel + real WW3 MPI scaling) against <ww3>'s build.
-bench ww3=ww3_src:
+# i9 vs 4090 benchmarks (kernel + real WW3 MPI scaling) against <ww3>'s build; builds ww_bench_case first.
+bench ww3=ww3_src: (kokkos-build "openmp-release")
     bash bench/run_all.sh "{{ww3}}/build"
+
+# Generate a WW3 benchmark case, e.g. `just bench-case --size small -o bench/case_small` (see bench/README.md).
+bench-case *args: (kokkos-build "openmp-release")
+    "{{kokkos_dir}}/build/openmp-release/tools/bench_case/ww_bench_case" "$@"
 
 # Build the GPU sandbox (needs nvfortran; `just gpu CC_ARCH=cc90` for an H100).
 gpu *args:
@@ -88,13 +92,17 @@ gpu *args:
 swan swan=swan_src:
     bash scripts/04_get_swan.sh "{{swan}}"
 
-# Delete run artefacts (bench, gpu binaries, example outputs); keep configs.
+# Delete run artefacts (bench, gpu binaries, example outputs, exercise builds); keep configs and kokkos/build.
 clean-runs:
     make -C bench clean
-    rm -rf exercises/runs gpu/00_hello_acc gpu/01_dispersion gpu/02_do_concurrent gpu/03_precision
-    find examples -name '*.nc' -delete
+    rm -rf gpu/00_hello_acc gpu/01_dispersion gpu/02_do_concurrent gpu/03_precision
+    rm -rf exercises/solutions/build exercises/solutions/out
+    rm -f examples/01-fetch-limited-growth/make_inputs examples/02-regional-real-forcing/make_bathy
+    rm -rf examples/02-regional-real-forcing/gfs.*
+    find examples -name '*.nc' ! -name gebco.nc ! -name gfs_winds.nc -delete
     find examples -name '*.ww3' -delete
     find examples -name '*.out' -delete
+    find examples -name '*.inp' -delete
 
 # ---------------------------------------------------------------------
 # Pull requests (ported from h0ffmann/marola)
@@ -182,3 +190,67 @@ translate *args:
 
 # Everything: book + proposal pt + proposal en (same as `nix build .`).
 pubs: book (proposal "pt") (proposal "en")
+
+# ---------------------------------------------------------------------
+# Kokkos (kokkos/): C++ kernels, intro programs and GoogleTest suites
+# ---------------------------------------------------------------------
+
+kokkos_dir := justfile_directory() + "/kokkos"
+
+# Configure kokkos/ with a preset: serial-debug (default), openmp-release, cuda-release (needs `just cuda` shell).
+kokkos-configure preset="serial-debug":
+    nix develop "{{pratico}}#ww3" --command cmake -S "{{kokkos_dir}}" --preset {{preset}}
+
+# Build a preset.
+kokkos-build preset="serial-debug": (kokkos-configure preset)
+    nix develop "{{pratico}}#ww3" --command cmake --build "{{kokkos_dir}}/build/{{preset}}"
+
+# Build and run ctest for a preset.
+kokkos-test preset="serial-debug": (kokkos-build preset)
+    nix develop "{{pratico}}#ww3" --command ctest --test-dir "{{kokkos_dir}}/build/{{preset}}" --output-on-failure
+
+# Configure, build and test the cuda-release preset in the CUDA shell (RTX 4090 / ADA89).
+kokkos-cuda-test:
+    nix develop "{{pratico}}#cuda" --command cmake -S "{{kokkos_dir}}" --preset cuda-release
+    nix develop "{{pratico}}#cuda" --command cmake --build "{{kokkos_dir}}/build/cuda-release"
+    nix develop "{{pratico}}#cuda" --command ctest --test-dir "{{kokkos_dir}}/build/cuda-release" --output-on-failure
+
+# Regenerate the committed W3SNL1 parity fixture from the Fortran reference.
+snl1-fixtures: (kokkos-configure "serial-debug")
+    nix develop "{{pratico}}#ww3" --command cmake --build "{{kokkos_dir}}/build/serial-debug" --target snl1-fixtures
+    git -C "{{justfile_directory()}}" diff --stat -- kokkos/tests/fixtures
+
+# UNTESTED (see kokkos/README.md): cross-check snl1_ref.F90 against the real W3SNL1 in <ww3>'s build.
+l1-crosscheck ww3=ww3_src:
+    nix develop "{{pratico}}#ww3" --command cmake -S "{{kokkos_dir}}" -B "{{kokkos_dir}}/build/crosscheck" \
+        -DCMAKE_BUILD_TYPE=Release -DWW_WW3_BUILD_DIR="{{ww3}}/build"
+    nix develop "{{pratico}}#ww3" --command cmake --build "{{kokkos_dir}}/build/crosscheck" \
+        --target gen_snl1_fixture gen_snl1_ww3lib
+    nix develop "{{pratico}}#ww3" --command "{{kokkos_dir}}/build/crosscheck/tests/fixtures/gen_snl1_fixture" /tmp/snl1_ref.bin
+    nix develop "{{pratico}}#ww3" --command "{{kokkos_dir}}/build/crosscheck/tests/fixtures/gen_snl1_ww3lib" /tmp/snl1_ww3lib.bin
+    cmp /tmp/snl1_ref.bin /tmp/snl1_ww3lib.bin && echo "snl1_ref.F90 is byte-identical to WW3's own W3SNL1"
+
+# Remove kokkos/build.
+kokkos-clean:
+    rm -rf "{{kokkos_dir}}/build"
+
+# ---------------------------------------------------------------------
+# Validation (kokkos/tools, kokkos/tests): field comparison, L2 replays, profiling
+# ---------------------------------------------------------------------
+
+nccmp_bin := kokkos_dir + "/build/openmp-release/tools/nccmp-tol/nccmp-tol"
+
+# Compare <test> against <ref> field by field; exit 0 iff every variable in <tol> is within tolerance.
+nccmp ref test tol="kokkos/tools/nccmp-tol/tolerances.txt":
+    [ -x "{{nccmp_bin}}" ] || just kokkos-build openmp-release
+    nix develop "{{pratico}}#ww3" --command "{{nccmp_bin}}" "{{ref}}" "{{test}}" "{{tol}}"
+
+# L2 replay of <test> (after `just rt <test>`): ww3_shel with WW_KOKKOS_SNL1=0 vs 1, nccmp-tol on the ww3_ounf output, row in kokkos/PORT_STATUS.md.
+l2 test="ww3_ts1" ww3=ww3_src:
+    [ -x "{{nccmp_bin}}" ] || just kokkos-build openmp-release
+    nix develop "{{pratico}}#ww3" --command bash kokkos/tests/L2_replay.sh "{{ww3}}" "{{test}}"
+
+# Phase tables for <test>: gprof (rebuilds WW3 with -pg into <ww3>/build-pg), then perf if the host has it.
+profile test="ww3_tp1.1" ww3=ww3_src:
+    nix develop "{{pratico}}#ww3" --command bash kokkos/tools/profile/gprof_table.sh "{{ww3}}" "{{test}}"
+    nix develop "{{pratico}}#ww3" --command bash kokkos/tools/profile/perf_table.sh "{{ww3}}" "{{test}}" || [ $? -eq 3 ]

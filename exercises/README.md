@@ -1,71 +1,60 @@
-# pyww3 exercises
+# Exercises for lessons 09–13
 
-Six exercises, roughly 20–60 minutes each. Each `exNN_*.py` has the scaffolding, the
-docstring explaining what you're doing and why, and `TODO` markers. Working versions are in
-`solutions/`.
+Five exercises, one per lesson of the second half of the course, 30–90 minutes each.
+Each sheet says what to produce and how to check it; `solutions/` has a working version
+of every one. Shell, Fortran and C++ only — the same languages as the lab code.
+
+| | Sheet | Lesson | You produce |
+|---|---|---|---|
+| 09 | [`ex09_bench.md`](ex09_bench.md) | [09 — benchmark, profile, compile, run](../course/09-benchmark-profile-compile-run.md) | a compile-option matrix: flags × threads → wall-clock and an `nccmp-tol` verdict |
+| 10 | [`ex10_profile.md`](ex10_profile.md) | [10 — modern Fortran refactoring](../course/10-modern-fortran-refactoring.md) | a gprof profile of `ww3_shel`, bucketed into source terms / propagation / communication / I/O |
+| 11 | [`ex11_refactor.md`](ex11_refactor.md) | [10 — modern Fortran refactoring](../course/10-modern-fortran-refactoring.md) | a WW3-style routine refactored (explicit interface, `intent`, `pure`, no automatic array) and a parity test to 1e-6 |
+| 12 | [`ex12_reduce.md`](ex12_reduce.md) | [11 — Kokkos and modern C++](../course/11-kokkos-and-modern-cpp.md) | `Hs` at every sea point from an action-density `View` with a team `parallel_reduce`, checked against a closed form |
+| 13 | [`ex13_port.md`](ex13_port.md) | [12 — porting a kernel: W3SNL1](../course/12-porting-a-kernel-w3snl1.md), [13 — bulk porting](../course/13-bulk-porting-with-agents.md) | an L2 replay of `ww3_ts1` (Fortran vs Kokkos `W3SNL1`) and a written reading of its table |
+
+Do them in order: 09 gives you the reference run and the measuring habit, 10 tells you
+what to port, 11 is the Fortran half of a port, 12 the C++ half, and 13 is the validation
+ladder end to end.
 
 ## Setup
 
+Everything runs inside the pinned toolchain shell, from the repository root:
+
 ```bash
-pip install pyww3 xarray netcdf4 matplotlib numpy
-export WW3=$HOME/src/WW3          # your built clone
-export PATH="$WW3/build/bin:$PATH"
+just ww3                          # gfortran, CMake, Kokkos, GoogleTest, NetCDF, gprof, cdo, ecCodes
+just rt ww3_tp1.1                 # the reference run that 09 and 13 compare against  (~30 s)
+just rt ww3_ts1 ST4               # ...and the source-term one (its input/ has switch_ST4, not switch_PR3_UQ)
+just kokkos-build openmp-release  # nccmp-tol, ww_bench_case, ww_fetch_analyse
 ```
 
-`pyww3` shells out to the WW3 executables, so they must be on `PATH` and the model must be
-compiled with `NC4`.
+The shell solutions (09, 10, 13) need a WW3 checkout and take minutes; the compiled ones
+(11, 12) build in seconds:
 
-## The exercises
+```bash
+cmake -S exercises/solutions -B exercises/solutions/build -G Ninja
+cmake --build exercises/solutions/build
+ctest --test-dir exercises/solutions/build --output-on-failure
+```
 
-| | File | What you learn |
-|---|---|---|
-| 1 | `ex01_grid.py` | Build `mod_def.ww3` from Python. Namelist ↔ keyword mapping, `update_text`, the regenerate-the-text gotcha. |
-| 2 | `ex02_shel.py` | Run the model. Homogeneous forcing, output types, reading `stdout` back. |
-| 3 | `ex03_output.py` | `ww3_ounf` → netCDF → xarray. Verify against the fetch-growth laws. |
-| 4 | `ex04_sweep.py` | Parameter sweep: one run per wind speed, all orchestrated in Python. This is the actual reason to script a model. |
-| 5 | `ex05_spectra.py` | `ww3_ounp` + `wavespectra`. Recover `Hs` from the 2D spectrum and check it against the model's own `HS` field. |
-| 6 | `ex06_pipeline.py` | Wrap the lot in a reusable `WW3Case` class with caching. Build the tool you'd actually use. |
-
-Do them in order. Each builds on the previous one's output.
+`just clean-runs` removes `exercises/solutions/build/` and `exercises/solutions/out/`.
 
 ## The two things that will trip you up
 
-**1. Parameter naming.** Namelist `SECTION%FIELD` becomes `section_field`, lowercased,
-`%` → `_`:
+**1. A stale `mod_def.ww3`.** Every WW3 program reads it; `ww3_grid` writes it. If you
+change a switch or a `ww3_grid.nml` and the numbers do not move, you are running against
+the old one. `scripts/03_run_regtest.sh` rebuilds `work_lab/` from scratch each time,
+which is why the solutions go through it rather than reusing a directory.
 
-```
-SPECTRUM%FREQ1    ->  spectrum_freq1
-TIMESTEPS%DTMAX   ->  timesteps_dtmax
-GRID%ZLIM         ->  grid_zlim
-RECT%NX           ->  rect_nx
-DEPTH%FILENAME    ->  depth_filename
-INPUT%FORCING%WINDS -> input_forcing_winds
-```
-
-**2. Mutating an attribute doesn't update the text.** The namelist string is built once, in
-`__post_init__`. If you change a field afterwards you must rebuild it:
-
-```python
-W.timesteps_dtmax = 1440.
-W.text = W.populate_namelist()   # <-- REQUIRED
-W.to_file()
-```
-
-Forgetting this writes the old value and produces a run that silently ignores your change.
-It's the single most common `pyww3` mistake and it's in the official docs for a reason.
+**2. Bit-for-bit is not the goal, agreement inside a stated tolerance is.** `-O3
+-march=native`, OpenMP thread count, and a reduction written in a different order all
+change the last bits. `nccmp-tol` and its tolerance table
+(`kokkos/tools/nccmp-tol/tolerances.txt`) are how the lab decides whether a difference
+matters; "the file changed" is not a finding, "`hs` differs by 3e-4 relative where the
+table allows 1e-4" is.
 
 ## Debugging
 
-`pyww3` is a thin layer. When something fails, look at what it actually wrote:
-
-```python
-W.to_file()
-print(open(f"{W.runpath}/ww3_grid.nml").read())   # the truth
-W.run()
-print(W.stdout)                                    # what WW3 said about it
-print(W.stderr)
-```
-
-If the namelist looks right and WW3 still objects, the problem is your WW3 configuration,
-not `pyww3`. Compare against `$WW3/model/nml/ww3_grid.nml`, which is the authoritative
-annotated template.
+When a solution script stops, read the log it points at (`exercises/solutions/out/exNN/`)
+before re-running. `ww3_grid` and `ww3_shel` are unusually clear about which namelist
+block or which file they did not like; a build failure is almost always a missing switch
+keyword (`OMPG` for threads, say — not `NC4`, which is inert in 7.14: netCDF output only needs CMake to find netCDF).

@@ -19,7 +19,7 @@ OUT="results_ww3_cpu.csv"
 command -v "$BIN/ww3_shel" >/dev/null 2>&1 || [ -x "$BIN/ww3_shel" ] || {
   echo "!! no ww3_shel in $BIN"; exit 1; }
 
-[ -d "$CASE" ] || { echo "!! no case dir $CASE -- run: python3 make_bench_case.py"; exit 1; }
+[ -d "$CASE" ] || { echo "!! no case dir $CASE -- run: just bench-case --size medium -o bench/$CASE"; exit 1; }
 
 echo "ranks,wall_s,speedup,efficiency,notes" > "$OUT"
 

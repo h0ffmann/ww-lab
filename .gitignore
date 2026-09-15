@@ -22,6 +22,8 @@ param.scratch
 depth.inp
 mask.inp
 bathy.inp
+# ...except the captured bench-case fixture (see kokkos/tests/fixtures/README.md)
+!kokkos/tests/fixtures/bench_small/*
 
 # generated namelists (the templates are tracked, the copies are not)
 ww3_prnc.nml
@@ -43,6 +45,8 @@ RESULTS.md
 
 # builds
 build/
+kokkos/build/
+exercises/solutions/build/
 swan/
 *.ninja
 .ninja_deps
@@ -57,7 +61,12 @@ gpu/03_precision
 
 # data you have to fetch yourself
 gebco.nc
-era5_winds.nc
+gfs_winds.nc
+examples/02-regional-real-forcing/gfs.*/
+
+# example helpers compiled by run.sh
+examples/01-fetch-limited-growth/make_inputs
+examples/02-regional-real-forcing/make_bathy
 
 # python
 __pycache__/

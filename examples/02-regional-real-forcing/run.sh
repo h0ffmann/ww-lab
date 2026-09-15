@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 # Example 02: regional run with real bathymetry and real winds.
-# Unlike example 01, this one needs data you have to fetch yourself.
+# Unlike example 01, this one needs data you have to fetch yourself:
+#   gebco.nc      from https://download.gebco.net/ (see make_bathy.F90)
+#   gfs_winds.nc  from ./get_gfs.sh YYYYMMDD HH
+# Run inside `just ww3` (gfortran, netcdf-fortran and nf-config are there).
+#
+# SPDX-License-Identifier: MIT
 set -euo pipefail
+
+cd "$(dirname "$0")"
 
 if [ -n "${WW3:-}" ]; then
   for d in "$WW3/build/bin" "$WW3/build"; do [ -d "$d" ] && PATH="$d:$PATH"; done
@@ -9,11 +16,18 @@ if [ -n "${WW3:-}" ]; then
 fi
 command -v ww3_grid >/dev/null || { echo "!! ww3_grid not on PATH; set \$WW3"; exit 1; }
 
-[ -f gebco.nc ]      || { echo "!! missing gebco.nc -- see make_bathy.py docstring"; exit 1; }
-[ -f era5_winds.nc ] || { echo "!! missing era5_winds.nc -- run get_era5.py"; exit 1; }
+[ -f gebco.nc ]     || { echo "!! missing gebco.nc -- see the header of make_bathy.F90"; exit 1; }
+[ -f gfs_winds.nc ] || { echo "!! missing gfs_winds.nc -- run ./get_gfs.sh YYYYMMDD HH"; exit 1; }
 
 echo "== bathymetry =================================================="
-python3 make_bathy.py gebco.nc
+# Compiled here, against the toolchain's netcdf-fortran, when missing or stale.
+if [ ! -x ./make_bathy ] || [ make_bathy.F90 -nt make_bathy ]; then
+  command -v nf-config >/dev/null || { echo "!! nf-config not found -- run inside 'just ww3'"; exit 1; }
+  # shellcheck disable=SC2046  # nf-config prints several flags; splitting is the point
+  gfortran -O2 -std=f2018 -Wall -fimplicit-none $(nf-config --fflags) \
+    -o make_bathy make_bathy.F90 $(nf-config --flibs)
+fi
+./make_bathy gebco.nc
 
 echo; echo "== ww3_grid ===================================================="
 ww3_grid | tee ww3_grid.out
@@ -34,14 +48,12 @@ ls -la ./*.nc
 cat <<'NEXT'
 
 Next:
-  # gridded fields
-  python3 -c "import xarray as xr; print(xr.open_dataset('ww3.nc'))"
+  # what came out
+  ncdump -h ww3.nc | head -60
 
-  # spectra at the five points, via wavespectra
-  python3 - <<'PY'
-  from wavespectra import read_ww3
-  ds = read_ww3('ww3.<spec-file>.nc')
-  print(ds.spec.stats(['hs','tp','dpm']))
-  ds.isel(time=0, site=0).spec.plot(kind='contourf')
-  PY
+  # Hs at the five points over time, as a table
+  cdo -s outputtab,date,time,name,value -selname,hs ww3.nc | head -40
+
+  # compare two runs field by field (e.g. boundaries on vs off)
+  ../../kokkos/build/openmp-release/tools/nccmp-tol/nccmp-tol run_a/ww3.nc run_b/ww3.nc
 NEXT

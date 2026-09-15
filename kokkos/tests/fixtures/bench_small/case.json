@@ -1,0 +1,18 @@
+{
+  "nx": 120,
+  "ny": 80,
+  "nk": 24,
+  "nth": 24,
+  "hours": 12,
+  "dx_m": 20000.0,
+  "timesteps": {
+    "dtmax": 2820.0,
+    "dtxy": 940.0,
+    "dtkth": 1410.0,
+    "dtmin": 10.0
+  },
+  "sea_points": 9520,
+  "spectral_bins": 576,
+  "state_values": 5483520,
+  "state_mb": 21.93408
+}
